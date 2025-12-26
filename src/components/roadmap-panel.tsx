@@ -67,51 +67,38 @@ export function RoadmapPanel({ response, isLoading, isStreaming = false }: Roadm
                 remarkPlugins={[remarkGfm]}
                 components={{
                   h1: ({ children }) => (
-                    <h1 className="text-2xl font-bold text-white mb-4 mt-6 first:mt-0 flex items-center gap-2">
-                      <Target className="w-5 h-5 text-blue-400" />
+                    <h1 className="text-2xl font-bold text-white mb-6 mt-8 first:mt-0">
                       {children}
                     </h1>
                   ),
-                  h2: ({ children }) => {
-                    const getIcon = (text: string) => {
-                      if (text.toLowerCase().includes('transferable') || text.toLowerCase().includes('skills')) {
-                        return <TrendingUp className="w-4 h-4 text-green-400" />;
-                      }
-                      if (text.toLowerCase().includes('salary') || text.toLowerCase().includes('bridge') || text.toLowerCase().includes('financial')) {
-                        return <DollarSign className="w-4 h-4 text-yellow-400" />;
-                      }
-                      if (text.toLowerCase().includes('month') || text.toLowerCase().includes('plan') || text.toLowerCase().includes('upskill')) {
-                        return <BookOpen className="w-4 h-4 text-purple-400" />;
-                      }
-                      return <Clock className="w-4 h-4 text-blue-400" />;
-                    };
-
-                    return (
-                      <h2 className="text-xl font-semibold text-white mb-3 mt-6 flex items-center gap-2">
-                        {getIcon(children?.toString() || '')}
-                        {children}
-                      </h2>
-                    );
-                  },
+                  h2: ({ children }) => (
+                    <h2 className="text-xl font-semibold text-white mb-4 mt-8">
+                      {children}
+                    </h2>
+                  ),
                   h3: ({ children }) => (
-                    <h3 className="text-lg font-medium text-white mb-2 mt-4">
+                    <h3 className="text-lg font-medium text-white mb-3 mt-6">
                       {children}
                     </h3>
                   ),
                   p: ({ children }) => (
-                    <p className="text-white mb-3 leading-relaxed">
+                    <p className="text-base text-white leading-relaxed mb-4">
                       {children}
                     </p>
                   ),
                   ul: ({ children }) => (
-                    <ul className="text-white mb-4 space-y-2 ml-4">
+                    <ul className="text-white mb-4 space-y-2 ml-6">
                       {children}
                     </ul>
                   ),
+                  ol: ({ children }) => (
+                    <ol className="text-white mb-4 space-y-2 ml-6 list-decimal">
+                      {children}
+                    </ol>
+                  ),
                   li: ({ children }) => (
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-400 mt-1.5 text-xs">•</span>
-                      <span className="flex-1">{children}</span>
+                    <li className="text-base leading-relaxed">
+                      {children}
                     </li>
                   ),
                   strong: ({ children }) => (
@@ -125,7 +112,7 @@ export function RoadmapPanel({ response, isLoading, isStreaming = false }: Roadm
                     </em>
                   ),
                   blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-blue-500 pl-4 my-4 text-white italic">
+                    <blockquote className="border-l-4 border-blue-500 pl-6 my-6 text-white italic bg-slate-800/50 py-4 px-6 rounded-r-lg">
                       {children}
                     </blockquote>
                   ),
