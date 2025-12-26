@@ -279,60 +279,74 @@ export default function ShftrrDashboard() {
 
         {/* Main Center Content */}
         <main className="flex-1 bg-black flex flex-col" role="main">
-          {/* Hero Section - Centered with proper vertical alignment */}
-          <div className="flex-1 flex items-center justify-center px-12 py-8">
-            <div className="text-center w-full max-w-2xl space-y-16">
-              {/* Welcome text with proper hierarchy */}
-              <div className="space-y-6">
-                <p className="text-white text-2xl font-normal leading-relaxed">welcome to</p>
-                {/* Gradient text with period included */}
-                <h1 className="text-7xl md:text-8xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-blue-300 via-cyan-400 to-teal-600 bg-clip-text text-transparent">
-                    shftrr.
-                  </span>
-                </h1>
-              </div>
-
-              {/* Separator */}
-              <div className="w-full max-w-xs mx-auto h-px bg-gray-600 opacity-50 mb-8"></div>
-
-              {/* Chat History */}
-              {chatMessages.length > 0 && (
-                <div className="w-full max-w-lg mx-auto space-y-4 mb-8">
-                  {chatMessages.map((message, index) => (
-                    <div key={message.id} className={fadeInUp}>
-                      <div className={`p-4 rounded-lg transition-all duration-200 hover:shadow-lg ${
-                        message.isUser
-                          ? 'bg-gray-800 ml-auto max-w-sm hover:bg-gray-750'
-                          : 'bg-gray-900 mr-auto max-w-lg hover:bg-gray-850'
-                      }`}>
-                        {message.isUser ? (
-                          <p className="text-white text-sm leading-relaxed">{message.text}</p>
-                        ) : (
-                          <div className="prose prose-invert max-w-none">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                            >
-                              {message.text}
-                            </ReactMarkdown>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+          {/* Content Area - Changed to left alignment */}
+          <div className="flex-1 flex flex-col px-12 py-8 max-w-4xl mx-auto w-full">
+            {/* Hero Section - Only shown when no messages */}
+            {chatMessages.length === 0 && (
+              <div className="flex-1 flex flex-col items-center justify-center space-y-12">
+                <div className="text-center space-y-6">
+                  <p className="text-white text-2xl font-normal leading-relaxed">welcome to</p>
+                  <h1 className="text-7xl md:text-8xl font-bold leading-tight">
+                    <span className="bg-gradient-to-r from-blue-300 via-cyan-400 to-teal-600 bg-clip-text text-transparent">
+                      shftrr.
+                    </span>
+                  </h1>
                 </div>
-              )}
+                <div className="w-full max-w-xs h-px bg-gray-600 opacity-30"></div>
+              </div>
+            )}
 
-              {/* Typing Indicator */}
-              {showTyping && <TypingIndicator />}
+            {/* Chat History */}
+            {chatMessages.length > 0 && (
+              <div className="flex-1 overflow-y-auto space-y-12 py-8">
+                {chatMessages.map((message, index) => (
+                  <div key={message.id} className={`${fadeInUp} flex flex-col ${message.isUser ? 'items-end' : 'items-start'}`}>
+                    <div className={`p-6 rounded-2xl transition-all duration-200 ${
+                      message.isUser
+                        ? 'bg-blue-600/20 border border-blue-500/30 max-w-[80%] ml-auto text-white'
+                        : 'bg-gray-900/50 border border-gray-800 max-w-[90%] mr-auto'
+                    }`}>
+                      {message.isUser ? (
+                        <p className="text-white text-base leading-relaxed">{message.text}</p>
+                      ) : (
+                        <div className="prose prose-invert max-w-none">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-6 mt-8 first:mt-0">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-xl font-semibold text-white mb-4 mt-8">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-lg font-medium text-white mb-3 mt-6">{children}</h3>,
+                              p: ({ children }) => <p className="text-base text-white leading-relaxed mb-4">{children}</p>,
+                              ul: ({ children }) => <ul className="text-white mb-4 space-y-2 ml-6 list-disc">{children}</ul>,
+                              ol: ({ children }) => <ol className="text-white mb-4 space-y-2 ml-6 list-decimal">{children}</ol>,
+                              li: ({ children }) => <li className="text-base leading-relaxed">{children}</li>,
+                              strong: ({ children }) => <strong className="text-white font-bold">{children}</strong>,
+                              em: ({ children }) => <em className="text-white italic">{children}</em>,
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-4 border-blue-500 pl-6 my-6 text-white italic bg-slate-800/30 py-4 px-6 rounded-r-lg">
+                                  {children}
+                                </blockquote>
+                              ),
+                            }}
+                          >
+                            {message.text}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {showTyping && (
+                  <div className="flex items-start">
+                    <TypingIndicator />
+                  </div>
+                )}
+              </div>
+            )}
 
-              {/* Separator before input */}
-              {chatMessages.length > 0 && (
-                <div className="w-full max-w-xs mx-auto h-px bg-gray-600 opacity-50 mb-8"></div>
-              )}
-
-              {/* Input Field with proper UX */}
-              <div className="relative max-w-lg mx-auto">
+            {/* Input Field Area */}
+            <div className="mt-auto py-8">
+              <div className="relative max-w-2xl mx-auto w-full">
                 <label htmlFor="main-input" className="sr-only">
                   Start your conversation
                 </label>
@@ -344,14 +358,12 @@ export default function ShftrrDashboard() {
                   onKeyPress={handleKeyPress}
                   placeholder={isLoading ? "AI is thinking..." : "Start here..."}
                   disabled={isLoading}
-                  className={`w-full px-6 py-4 text-base rounded-lg border border-gray-500 bg-black text-white placeholder-gray-500 disabled:opacity-50 ${inputFocus}`}
+                  className={`w-full px-6 py-4 text-base rounded-xl border border-gray-700 bg-gray-900/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 ${inputFocus}`}
                   aria-label="Start your conversation"
                 />
-
-                {/* Error Display */}
                 {error && (
-                  <div className="mt-2 p-2 bg-red-900/20 border border-red-700 rounded text-red-400 text-sm">
-                    Error: {error}
+                  <div className="mt-4 p-3 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-sm">
+                    {error}
                   </div>
                 )}
               </div>
