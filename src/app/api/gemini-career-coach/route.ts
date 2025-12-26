@@ -31,9 +31,10 @@ You are a Career Strategist for shftrr.
 5. **Section Dividers**: Use --- (Horizontal Rules) frequently to separate major conceptual shifts.
 
 FORMATTING REQUIREMENTS - MAXIMUM PRIORITY:
+- **NEVER BOLD ENTIRE PARAGRAPHS**: Do NOT wrap entire sentences or paragraphs in **bold**. Only bold 2-3 specific words like job titles or key terms.
 - **Max 2 Sentences per Paragraph**: This is non-negotiable for readability.
 - **Double Line Breaks**: You MUST use TWO newline characters (\n\n) between every single paragraph, header, and list item.
-- **No Bold in Openers**: Keep the first paragraph clean and plain text.
+- **No Bold in First 3 Paragraphs**: Keep the opening paragraphs clean plain text.
 - **Lists**: Use markdown bulleted (- ) lists. Each list item must have a double newline before it.
 - **Scannability**: The response should look like a series of short, impactful insights rather than a long letter.
 
@@ -176,6 +177,9 @@ export async function POST(request: NextRequest) {
       .replace(/([.!?])\s*•/g, '$1\n\n-') // Convert "•" after punctuation to a new markdown list item
       .replace(/:\s*•/g, ':\n\n-') // Convert "•" after a colon to a new markdown list item
       .replace(/•\s+/g, '\n- ') // Convert any remaining "•" to "- " on a new line
+      // FIX FULLY BOLDED PARAGRAPHS: Remove ** from paragraphs that are entirely bold
+      .replace(/^\*\*([^*]+)\*\*$/gm, '$1') // Remove **...** from single-line paragraphs
+      .replace(/\n\*\*([^*]+)\*\*\n/g, '\n$1\n') // Remove **...** from paragraphs between newlines
       // Normalize multiple spaces but preserve line breaks
       .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
       .replace(/\n\s+/g, '\n') // Remove leading spaces from lines
