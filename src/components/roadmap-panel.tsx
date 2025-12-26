@@ -67,22 +67,22 @@ export function RoadmapPanel({ response, isLoading, isStreaming = false }: Roadm
                 remarkPlugins={[remarkGfm]}
                 components={{
                   h1: ({ children }) => (
-                    <h1 className="text-2xl font-bold text-white mb-6 mt-8 first:mt-0">
+                    <h1 className="text-xl font-bold text-white mb-4 mt-6 first:mt-0">
                       {children}
                     </h1>
                   ),
                   h2: ({ children }) => (
-                    <h2 className="text-xl font-semibold text-white mb-4 mt-8">
+                    <h2 className="text-lg font-semibold text-white mb-3 mt-6">
                       {children}
                     </h2>
                   ),
                   h3: ({ children }) => (
-                    <h3 className="text-lg font-medium text-white mb-3 mt-6">
+                    <h3 className="text-base font-medium text-white mb-2 mt-4">
                       {children}
                     </h3>
                   ),
                   p: ({ children }) => (
-                    <p className="text-base text-white leading-relaxed mb-4">
+                    <p className="text-[15px] text-white leading-relaxed mb-4">
                       {children}
                     </p>
                   ),
@@ -97,7 +97,7 @@ export function RoadmapPanel({ response, isLoading, isStreaming = false }: Roadm
                     </ol>
                   ),
                   li: ({ children }) => (
-                    <li className="text-base leading-relaxed">
+                    <li className="text-[15px] leading-relaxed">
                       {children}
                     </li>
                   ),

@@ -307,19 +307,19 @@ export default function ShftrrDashboard() {
                         : 'bg-gray-900/50 border border-gray-800 max-w-[90%] mr-auto'
                     }`}>
                       {message.isUser ? (
-                        <p className="text-white text-base leading-relaxed">{message.text}</p>
+                        <p className="text-white text-[15px] leading-relaxed">{message.text}</p>
                       ) : (
                         <div className="prose prose-invert max-w-none">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
-                              h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-6 mt-8 first:mt-0">{children}</h1>,
-                              h2: ({ children }) => <h2 className="text-xl font-semibold text-white mb-4 mt-8">{children}</h2>,
-                              h3: ({ children }) => <h3 className="text-lg font-medium text-white mb-3 mt-6">{children}</h3>,
-                              p: ({ children }) => <p className="text-base text-white leading-relaxed mb-4">{children}</p>,
+                              h1: ({ children }) => <h1 className="text-xl font-bold text-white mb-4 mt-6 first:mt-0">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-lg font-semibold text-white mb-3 mt-6">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-base font-medium text-white mb-2 mt-4">{children}</h3>,
+                              p: ({ children }) => <p className="text-[15px] text-white leading-relaxed mb-4">{children}</p>,
                               ul: ({ children }) => <ul className="text-white mb-4 space-y-2 ml-6 list-disc">{children}</ul>,
                               ol: ({ children }) => <ol className="text-white mb-4 space-y-2 ml-6 list-decimal">{children}</ol>,
-                              li: ({ children }) => <li className="text-base leading-relaxed">{children}</li>,
+                              li: ({ children }) => <li className="text-[15px] leading-relaxed">{children}</li>,
                               strong: ({ children }) => <strong className="text-white font-bold">{children}</strong>,
                               em: ({ children }) => <em className="text-white italic">{children}</em>,
                               blockquote: ({ children }) => (

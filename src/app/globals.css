@@ -46,57 +46,38 @@
   /* Clean prose styling for shftrr. chat */
   .prose {
     color: #ffffff;
-  }
-
-  .prose h1,
-  .prose h2,
-  .prose h3,
-  .prose h4 {
-    color: #ffffff;
-    font-weight: 700;
-  }
-
-  .prose strong {
-    color: #ffffff;
-    font-weight: 700;
-  }
-
-  .prose em {
-    color: #ffffff;
-    font-style: italic;
-  }
-
-  .prose blockquote {
-    border-left: 4px solid #3b82f6;
-    margin: 1.5rem 0;
-    color: #ffffff;
-    background-color: rgba(31, 41, 55, 0.5);
-    padding: 1rem 1.5rem;
-    border-radius: 0 0.5rem 0.5rem 0;
-    font-style: italic;
-  }
-
-  .prose hr {
-    border-color: #4b5563;
-    margin: 1rem 0;
-  }
-
-  .prose a {
-    color: #60a5fa;
-    text-decoration: underline;
+    font-size: 15px;
   }
 
   .prose p {
-    margin-bottom: 1.5rem;
-    line-height: 1.8;
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+  }
+
+  .prose h1 {
+    font-size: 1.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .prose h2 {
+    font-size: 1.25rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose h3 {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
   }
 
   .prose ul, .prose ol {
-    margin-bottom: 1.5rem;
-    margin-top: 1rem;
+    margin-bottom: 1.25rem;
+    margin-top: 0.75rem;
   }
 
   .prose li {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 }
