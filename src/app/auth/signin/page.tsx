@@ -133,6 +133,16 @@ export default function SignIn() {
               </div>
             </div>
 
+            {/* Forgot Password Link */}
+            <div className="flex justify-end">
+              <a
+                href="/auth/forgot-password"
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors duration-200"
+              >
+                Forgot your password?
+              </a>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}

@@ -5,6 +5,9 @@ import GoogleProvider from "next-auth/providers/google";
 // Simple in-memory user store for demo (replace with database later)
 const users: any[] = [];
 
+// Password reset tokens store (in production, use Redis or database)
+const passwordResetTokens: { [token: string]: { email: string; expires: Date } } = {};
+
 // Debug: Add a test user for immediate testing
 users.push({
   id: "test-user-1",
@@ -93,4 +96,55 @@ export function addUser(user: { id: string; name: string; email: string; passwor
 // Helper function to find user by email
 export function findUserByEmail(email: string) {
   return users.find(u => u.email === email);
+}
+
+// Password reset helper functions
+export function generatePasswordResetToken(email: string): string {
+  // Generate a secure random token (in production, use crypto.randomBytes)
+  const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  passwordResetTokens[token] = { email, expires };
+
+  // Clean up expired tokens
+  Object.keys(passwordResetTokens).forEach(key => {
+    if (passwordResetTokens[key].expires < new Date()) {
+      delete passwordResetTokens[key];
+    }
+  });
+
+  return token;
+}
+
+export function validatePasswordResetToken(token: string): string | null {
+  const tokenData = passwordResetTokens[token];
+
+  if (!tokenData) {
+    return null;
+  }
+
+  if (tokenData.expires < new Date()) {
+    delete passwordResetTokens[token];
+    return null;
+  }
+
+  return tokenData.email;
+}
+
+export function updateUserPassword(email: string, newPassword: string): boolean {
+  const user = users.find(u => u.email === email);
+  if (!user) {
+    return false;
+  }
+
+  user.password = newPassword;
+  return true;
+}
+
+export function clearExpiredTokens(): void {
+  Object.keys(passwordResetTokens).forEach(key => {
+    if (passwordResetTokens[key].expires < new Date()) {
+      delete passwordResetTokens[key];
+    }
+  });
 }
