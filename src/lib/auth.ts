@@ -15,7 +15,6 @@ users.push({
 });
 
 export const authOptions: NextAuthOptions = {
-  baseURL: process.env.NEXTAUTH_URL || (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:3000'),
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
@@ -68,6 +67,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/auth/signin",
+    error: "/auth/signin",
   },
   callbacks: {
     async jwt({ token, user }) {
