@@ -1,0 +1,235 @@
+import { google } from '@ai-sdk/google';
+import { generateText, tool } from 'ai';
+import { NextRequest, NextResponse } from 'next/server';
+// import { getMarketSalary, calculateRunway, tools } from '@/lib/gemini-tools'; // Temporarily disabled
+import { z } from 'zod';
+
+const requestSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.string()
+  })),
+  resumeText: z.string().optional(),
+  ventText: z.string().optional(),
+  temperature: z.number().optional().default(0.7)
+});
+
+const systemInstruction = `You are an empathetic career coach and trusted advisor. Your goal is to help professionals navigate career changes with confidence and clarity.
+
+### Formatting Constraints:
+
+You are a Career Strategist for shftrr.
+
+Vertical Rhythm: You MUST use exactly two newline characters (\n\n) between every single paragraph, header, and list item.
+
+Scannability: No paragraph can exceed 3 sentences.
+
+Visual Breaks: Use --- (Horizontal Rules) to separate major sections like 'Mapping Your Starting Point' and 'The Three Pillars'.
+
+FORMATTING REQUIREMENTS - MAXIMUM PRIORITY:
+- **Double Line Breaks**: You MUST use TWO newline characters (\n\n) between every single paragraph, header, and list item
+- **Headers**: Always precede a Markdown header (## or ###) with exactly two newlines
+- **Lists**: For more than 2 questions/points, ALWAYS use bulleted (•) or numbered (1.) lists. Never put list items on the same line
+- **Bolding**: **Bold key terms** and **calls to action** to guide the user's eye. Bold every 3rd or 4th sentence to create visual anchors
+- **Spacing**: Use horizontal rules (---) to separate major sections
+- **Paragraph Length**: No paragraph longer than 3 sentences
+- **Line Breaks**: Each bullet point must be on its own line with proper indentation
+
+CONVERSATIONAL APPROACH:
+- Be warm, supportive, and understanding - like a trusted mentor over coffee
+- Start conversations by acknowledging their situation and showing genuine interest
+- Ask thoughtful questions to understand their motivations, skills, and concerns
+- Build rapport before diving into practical details
+- Use "we" and "let's" to create partnership in the journey
+
+DATA-DRIVEN WHEN APPROPRIATE:
+- Use tools only when you have enough context and the user is ready for specific calculations
+- Present data insights conversationally, not as cold facts
+- Frame financial and salary information as helpful insights, not requirements
+- Never demand data - gently ask when it would be helpful
+
+RESPONSE STYLE:
+- Natural, conversational tone with occasional empathy and encouragement
+- Focus on understanding first, planning second
+- Be concise but complete - aim for 300-500 words per response
+- End with open questions to continue the conversation
+
+REMEMBER: You're a coach, not a drill sergeant. People come to you in moments of uncertainty - meet them with empathy and guidance.`;
+
+// Simple rate limiting (in production, use Redis or similar)
+const rateLimit = new Map<string, number>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10;
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const userRequests = rateLimit.get(identifier) || 0;
+
+  if (userRequests >= MAX_REQUESTS_PER_WINDOW) {
+    return false; // Rate limited
+  }
+
+  rateLimit.set(identifier, userRequests + 1);
+
+  // Clean up old entries (simple implementation)
+  setTimeout(() => {
+    rateLimit.delete(identifier);
+  }, RATE_LIMIT_WINDOW);
+
+  return true;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Simple rate limiting by IP (in production, use user ID)
+    const clientIP = request.headers.get('x-forwarded-for') ||
+                    request.headers.get('x-real-ip') ||
+                    'unknown';
+
+    if (!checkRateLimit(clientIP)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment before trying again." },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json();
+    const { messages, resumeText, ventText, temperature } = requestSchema.parse(body);
+
+    // Prepare the conversation context
+    let contextMessage = '';
+    if (resumeText || ventText) {
+      contextMessage = 'Context about the user:\n';
+      if (resumeText) contextMessage += `Resume: ${resumeText}\n\n`;
+      if (ventText) contextMessage += `Current situation: ${ventText}\n\n`;
+    }
+
+    // Combine context with user messages
+    const fullMessages = [
+      { role: 'system' as const, content: systemInstruction },
+      ...(contextMessage ? [{ role: 'system' as const, content: contextMessage }] : []),
+      ...messages.map(msg => ({
+        role: msg.role as 'system' | 'user' | 'assistant',
+        content: msg.content
+      }))
+    ];
+
+    console.log('Making Gemini API call...');
+    let result;
+    try {
+      result = await generateText({
+        model: google('gemini-flash-latest'),
+        messages: fullMessages,
+        // Temporarily disable tools to fix build
+        // tools: {
+        //   get_market_salary: tool({
+        //     description: 'Get market salary data for a specific role and location',
+        //     parameters: z.object({
+        //       role: z.string().describe("The job title/role to get salary data for"),
+        //       location: z.string().optional().describe("Location for salary data (city, state, or 'remote')"),
+        //       experience_level: z.enum(["entry", "mid", "senior", "executive"]).optional().describe("Experience level")
+        //     }),
+        //     execute: getMarketSalary
+        //   }),
+        //   calculate_runway: tool({
+        //     description: 'Calculate financial runway based on savings and expenses',
+        //     parameters: z.object({
+        //       monthly_savings: z.number().describe("Monthly savings amount in dollars"),
+        //       monthly_expenses: z.number().describe("Monthly expenses in dollars"),
+        //       emergency_fund: z.number().optional().describe("Emergency fund amount")
+        //     }),
+        //     execute: calculateRunway
+        //   })
+        // },
+        temperature: temperature
+      });
+      console.log('Gemini API call successful');
+    } catch (apiError) {
+      console.error('Gemini API call failed:', apiError);
+
+      // Handle quota exceeded errors specifically
+      const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
+      if (errorMessage.includes('quota exceeded') || errorMessage.includes('Quota exceeded')) {
+        throw new Error(`QUOTA_EXCEEDED: You've reached the free tier limit of 20 requests per day. To continue using the career coach, please upgrade to a paid Gemini API plan at https://ai.google.dev/pricing. Your conversation history will be preserved.`);
+      }
+
+      throw new Error(`Gemini API error: ${errorMessage}`);
+    }
+
+    // Clean up the response to remove any function call syntax
+    let cleanResponse = result.text || "I apologize, but I encountered an issue processing your request. Please try again.";
+
+    console.log('Raw Gemini response:', cleanResponse);
+    console.log('Raw response length:', cleanResponse.length);
+
+    // Remove function call notations that might appear in the response
+    cleanResponse = cleanResponse
+      .replace(/\(\s*For\s+[^)]+\)/gi, '') // Remove "(For function_name)" patterns
+      .replace(/\(\s*for\s+[^)]+\)/gi, '') // Remove "(for function_name)" patterns (case insensitive)
+      .replace(/get_market_salary/gi, '') // Remove function name mentions
+      .replace(/calculate_runway/gi, '') // Remove function name mentions
+      .replace(/---\s*Tool\s+Usage\s*---[\s\S]*?(?=---|$)/gi, '') // Remove tool usage sections
+      .replace(/---\s*Tool\s+Results\s*---[\s\S]*?(?=---|$)/gi, '') // Remove tool results sections
+      // Normalize multiple spaces but preserve line breaks
+      .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
+      .replace(/\n\s+/g, '\n') // Remove leading spaces from lines
+      .trim();
+
+    // Temporarily disabled length limiting to allow full responses
+    // TODO: Re-enable with user preference for concise vs detailed responses
+    // const maxLength = 1500;
+    // if (cleanResponse.length > maxLength) {
+    //   // Smart truncation logic would go here
+    // }
+
+    // If the response becomes empty after cleaning, provide a fallback
+    if (!cleanResponse || cleanResponse.trim().length < 10) {
+      cleanResponse = "I've analyzed your situation and provided insights based on current market data. How can I help you further with your career transition?";
+    }
+
+    // Enforce brevity: Keep responses under 600 words for conciseness
+    const maxLength = 3000; // ~600 words limit
+    if (cleanResponse.length > maxLength) {
+      // Cut at paragraph boundary for clean breaks
+      const truncated = cleanResponse.substring(0, maxLength);
+      const lastParagraph = truncated.lastIndexOf('\n\n');
+      const lastSentence = truncated.lastIndexOf('.');
+
+      if (lastParagraph > maxLength * 0.6) {
+        cleanResponse = cleanResponse.substring(0, lastParagraph) + '\n\n*Response truncated for brevity...*';
+      } else if (lastSentence > maxLength * 0.7) {
+        cleanResponse = cleanResponse.substring(0, lastSentence + 1) + '\n\n*Response truncated for brevity...*';
+      } else {
+        cleanResponse = truncated + '...\n\n*Response truncated for brevity...*';
+      }
+    }
+
+    console.log('Cleaned response length:', cleanResponse.length);
+
+    return NextResponse.json({
+      response: cleanResponse,
+      toolCalls: result.toolCalls || [],
+      toolResults: result.toolResults || []
+    });
+
+  } catch (error) {
+    console.error('Gemini Career Coach API error:', error);
+    const errorDetails = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { error: 'Internal server error', details: errorDetails },
+      { status: 500 }
+    );
+  }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  });
+}

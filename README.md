@@ -1,177 +1,181 @@
-# CareerPivot
+# Career Pivot Coach
 
-A SaaS platform for mid-career transitions, built with Next.js 15, TypeScript, Tailwind CSS, Shadcn/UI, and Supabase.
+A complete AI-powered career coaching system that includes model fine-tuning, FastAPI backend, and web frontend.
 
-## Features
+## Quick Start
 
-- **User Authentication**: Secure sign-up and login with Supabase Auth
-- **Diagnostic Quiz**: Comprehensive career assessment after signup
-- **Profile Management**: Track current job title and salary
-- **Financial Planning**: Monitor monthly expenses, debt, and savings
-- **Career Goals**: Define target industries and desired salary
-- **Transition Planning**: Create structured milestones for 6-month, 1-year, and 2-year plans
-- **AI-Powered Escape Plans**: Generate personalized career transition strategies using Google Gemini AI
-- **Burnout Risk Assessment**: Analyze daily vents and work patterns for burnout indicators
-- **Financial Runway Calculator**: Calculate how long current savings will last
-- **Realistic Roadmaps**: AI-generated 3-phase transition plans based on financial constraints
-- **Protected Dashboard**: Secure routes with middleware-based authentication
-- **Responsive Design**: Modern UI with Shadcn/UI components
-
-## Tech Stack
-
-- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
-- **UI Components**: Shadcn/UI
-- **Backend**: Supabase (Auth & Database)
-- **Styling**: Tailwind CSS with custom design system
-
-## Database Schema
-
-The application uses the following Supabase tables:
-
-- `users`: Extended user profile with job and salary information
-- `user_assessments`: Diagnostic quiz results and career assessment data
-- `financial_constraints`: Monthly expenses, debt, and savings tracking
-- `career_goals`: Target industries and desired salary
-- `transition_plans`: Structured milestones for different time periods (6 months, 1 year, 2 years)
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- Supabase account and project
-
-### Installation
-
-1. Clone the repository:
+**Run the complete system:**
 ```bash
-git clone <repository-url>
-cd careerpivot
+python run-complete-system.py
 ```
 
-2. Install dependencies:
+This starts everything you need:
+- 🔧 FastAPI backend on http://localhost:8000
+- 🎨 Next.js dashboard on http://localhost:3000
+- 📚 API docs on http://localhost:8000/docs
+
+**Prerequisites:**
+- Ollama installed and running
+- Model loaded: `ollama create career-pivot-v1 -f /models/career-pivot-v1/model.gguf`
+
+## Components
+
+### 1. Model Fine-tuning
+- `generate_career_pivot_dataset.py` - Generates the training dataset (1,000 instruction-response pairs)
+- `fine_tune_career_coach.py` - Fine-tunes the model using Unsloth
+- `career_coach_train.jsonl` - The generated training dataset
+- `requirements.txt` - Python dependencies for fine-tuning
+
+### 2. FastAPI Backend
+- `career_coach_api.py` - FastAPI server with streaming chat endpoint
+- `api_requirements.txt` - Backend dependencies
+- `run_api_server.py` - Server startup script
+- `test_api.py` - API testing script
+
+### 3. Next.js Dashboard
+- `careerpivot-dashboard/` - Modern React dashboard with dark mode
+- `careerpivot-dashboard/run-dashboard.py` - Dashboard startup script
+
+## Setup
+
+1. Install dependencies:
 ```bash
-npm install
+pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
-
-Create a `.env.local` file in the root directory:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-GOOGLE_AI_API_KEY=your_google_ai_api_key
+2. Generate the training dataset (if not already done):
+```bash
+python generate_career_pivot_dataset.py
 ```
 
-Get your Google AI API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+## Fine-tuning
 
-### AI-Powered Features
+Run the fine-tuning script:
+```bash
+python fine_tune_career_coach.py
+```
 
-The application includes AI-powered career transition planning using Google Gemini:
+### Configuration
 
-- **Burnout Risk Assessment**: Analyzes daily work complaints and patterns to score burnout risk (0-100)
-- **Financial Runway Calculation**: Calculates how many months your current savings will last based on expenses
-- **Personalized Roadmaps**: Creates realistic 3-phase transition plans (6 months, 1 year, 2 years) that consider:
-  - Financial constraints (won't suggest quitting if runway is limited)
-  - Current skills and experience
-  - Industry transition feasibility
-  - Risk mitigation and contingency plans
+The script is configured with:
+- **Model**: `unsloth/Llama-3.2-1B-Instruct`
+- **Quantization**: 4-bit
+- **LoRA**: Rank=16, Alpha=16
+- **Training**: 3 epochs
+- **Output**: GGUF format (q4_k_m quantization)
+- **Save location**: `/models/career-pivot-v1`
 
-The AI considers factors like high mortgage payments, suggests bridge jobs instead of immediate career switches, and provides actionable, specific steps rather than vague advice.
+## Using with Ollama
 
-### Supabase Setup
+After fine-tuning completes, the model will be saved as a GGUF file in `/models/career-pivot-v1/`.
 
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
+To use with Ollama:
+```bash
+# Create Ollama model
+ollama create career-pivot-v1 -f /models/career-pivot-v1/model.gguf
 
-2. Go to your project's SQL Editor and run the migration file:
-   - Copy the contents of `supabase/migrations/20241224000000_initial_schema.sql`
-   - Execute it in your Supabase SQL Editor
+# Run the model
+ollama run career-pivot-v1
+```
 
-3. Enable Row Level Security (RLS) is already configured in the migration
+## Example Usage
 
-4. Get your project URL and anon key from Settings > API
+Once running in Ollama, you can interact with the career coach:
 
-### Development
+```
+User: I am a 42-year-old accountant with a mortgage feeling burnt out.
 
-Run the development server:
+Assistant: **Career Pivot Roadmap**
+
+**1. Transferable Skills Assessment**
+Based on your background as an accountant, here are three key transferable skills you possess:
+• Financial Analysis
+• Data Interpretation
+• Risk Assessment
+
+...[rest of response]
+```
+
+## Running the API Server
+
+1. **Prerequisites**: Make sure Ollama is installed and the model is loaded:
+```bash
+# Install Ollama (if not already installed)
+# Visit: https://ollama.ai
+
+# Load the fine-tuned model
+ollama create career-pivot-v1 -f /models/career-pivot-v1/model.gguf
+ollama run career-pivot-v1
+```
+
+2. **Start the API server**:
+```bash
+# Option 1: Using the run script
+python run_api_server.py
+
+# Option 2: Direct execution
+pip install -r api_requirements.txt
+python career_coach_api.py
+```
+
+3. **Test the API**:
+```bash
+python test_api.py
+```
+
+## Using the Next.js Dashboard
+
+The dashboard provides a complete career coaching experience:
+
+### Features
+- **📝 Dual Input Areas**: Separate tabs for resume and venting
+- **✨ Glowing Text Box**: Animated focus effects for better UX
+- **📊 Sidebar History**: Stores "Escape Plan" conversations
+- **📋 Markdown Roadmap**: Formatted AI responses with icons
+- **⚡ Streaming Responses**: Real-time word-by-word generation
+- **🌓 Dark Mode**: Professional dark theme throughout
+
+### Starting the Dashboard
+```bash
+# Quick start (starts both backend and frontend)
+python run-complete-system.py
+
+# Or start dashboard only
+cd careerpivot-dashboard
+python run-dashboard.py
+```
+
+### Using the Dashboard
+1. **Resume Tab**: Paste your resume, LinkedIn profile, or career summary
+2. **Vent Tab**: Share what's frustrating you about work (glowing textarea!)
+3. **Send Button**: Get personalized career coaching
+4. **Roadmap Panel**: View structured AI responses with markdown formatting
+5. **History Sidebar**: Access and manage previous conversations
+
+## API Endpoints
+
+- `POST /chat` - Send resume and vent text, get streaming AI response
+- `GET /health` - Check API and Ollama status
+- `GET /` - API information
+- `GET /docs` - Interactive API documentation (Swagger UI)
+
+### Chat Endpoint
 
 ```bash
-npm run dev
+curl -X POST "http://localhost:8000/chat" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "resume_text": "Your resume content here...",
+       "vent_text": "What you are venting about work...",
+       "temperature": 0.7,
+       "max_tokens": 2048
+     }'
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+## Model Details
 
-### Build for Production
-
-```bash
-npm run build
-npm start
-```
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── auth/
-│   │   ├── login/
-│   │   └── signup/
-│   ├── dashboard/
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
-├── components/
-│   ├── ui/           # Shadcn/UI components
-│   └── dashboard/    # Dashboard-specific components
-├── contexts/
-│   └── AuthContext.tsx
-├── lib/
-│   ├── auth.ts
-│   ├── database.types.ts
-│   └── supabase.ts
-supabase/
-└── migrations/
-    └── 20241224000000_initial_schema.sql
-```
-
-## Key Components
-
-- **AuthContext**: Manages authentication state across the app
-- **UserProfile**: Handles user profile updates
-- **FinancialConstraints**: Manages financial planning data
-- **CareerGoals**: Tracks career objectives
-- **TransitionPlans**: Creates and manages milestone plans
-
-## Authentication Flow
-
-1. Users can sign up with email/password
-2. Email verification is required (configurable in Supabase)
-3. Protected routes redirect unauthenticated users to login
-4. Authenticated users are redirected from auth pages to dashboard
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. Connect your GitHub repository to Vercel
-2. Add environment variables in Vercel dashboard
-3. Deploy automatically on push
-
-### Other Platforms
-
-Make sure to:
-- Set environment variables
-- Configure the build command: `npm run build`
-- Set the output directory: `.next`
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
+- **Base Model**: Llama-3.2-1B-Instruct
+- **Fine-tuned for**: Career coaching and pivot planning
+- **Training Data**: 1,000 synthetic career crisis scenarios
+- **Quantization**: Q4_K_M (GGUF format for Ollama)
+- **System Prompt**: Defines AI as "Senior Career Strategist" with 20+ years experience
