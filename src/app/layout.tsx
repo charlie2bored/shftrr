@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { ToastProvider } from "@/lib/toast-context";
+import { SessionProvider } from "@/components/SessionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CareerPivot - Mid-Career Transition Platform",
-  description: "Navigate your mid-career transition with confidence. Plan your next move with AI-powered insights and structured milestones.",
+  title: "Career Pivot Coach",
+  description: "AI-powered career coaching and pivot planning",
 };
 
 export default function RootLayout({
@@ -26,11 +28,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <SessionProvider>
+          <ErrorBoundary>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </ErrorBoundary>
+        </SessionProvider>
       </body>
     </html>
   );

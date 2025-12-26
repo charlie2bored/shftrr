@@ -1,426 +1,369 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useAuth } from '@/contexts/AuthContext'
+import { useState, useEffect } from 'react';
+import { Plus, LogOut, User } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { useGeminiChat, type GeminiChatRequest, type GeminiChatResponse } from '@/lib/use-gemini-chat';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { TypingIndicator } from '@/components/Skeleton';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { useToast } from '@/lib/toast-context';
+import { buttonHover, inputFocus, cardHover, fadeInUp } from '@/lib/animations';
 
-export default function Home() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
+interface ChatMessage {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: Date;
+  toolCalls?: any[];
+  toolResults?: any[];
+}
+
+export default function ShftrrDashboard() {
+  const { data: session, status } = useSession();
+  const [inputValue, setInputValue] = useState('');
+  const [isClient, setIsClient] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [resumeText, setResumeText] = useState('');
+  const [ventText, setVentText] = useState('');
+  const [showTyping, setShowTyping] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const { sendMessage, isLoading, error } = useGeminiChat(undefined, () => {
+    setShowUpgradePrompt(true);
+  });
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard')
-    }
-  }, [user, loading, router])
+    setIsClient(true);
+  }, []);
 
-  if (loading) {
+  // Prevent hydration mismatch by not rendering until client-side
+  if (!isClient || status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
       </div>
-    )
+    );
   }
 
-  if (user) {
-    return null // Will redirect to dashboard
+  // Show sign-in prompt for unauthenticated users
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          <h1 className="text-4xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-blue-300 via-cyan-400 to-teal-600 bg-clip-text text-transparent">
+              shftrr.
+            </span>
+          </h1>
+          <p className="text-xl text-gray-300 mb-8">
+            Your AI career coach awaits
+          </p>
+          <p className="text-gray-400 mb-8 leading-relaxed">
+            Sign in to start your personalized career coaching journey with AI-powered guidance and strategic planning.
+          </p>
+          <div className="space-y-4">
+            <a
+              href="/auth/signin"
+              className="inline-block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              Sign In
+            </a>
+            <a
+              href="/auth/signup"
+              className="inline-block w-full px-6 py-3 border border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              Create Account
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   }
+
+  const handleNewChat = () => {
+    // Handle new chat creation
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim() && !isLoading) {
+      const userInput = inputValue.trim();
+
+      // Add user message to chat
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        text: userInput,
+        isUser: true,
+        timestamp: new Date(),
+      };
+      setChatMessages(prev => [...prev, userMessage]);
+      setVentText(userInput);
+
+      // Prepare conversation history for Gemini
+      const conversationMessages = chatMessages.map(msg => ({
+        role: msg.isUser ? 'user' as const : 'assistant' as const,
+        content: msg.text
+      }));
+
+      // Add current user message
+      conversationMessages.push({
+        role: 'user',
+        content: userInput
+      });
+
+      // Send to Gemini
+      const chatRequest: GeminiChatRequest = {
+        messages: conversationMessages,
+        resumeText: resumeText,
+        ventText: userInput,
+        temperature: 0.7,
+      };
+
+      setInputValue('');
+      setShowTyping(true);
+
+      // Show success toast for message sent
+      success("Message sent", "AI is analyzing your career question...");
+
+      // Add AI placeholder message
+      const aiMessageId = `ai-${Date.now()}`;
+      const aiMessage: ChatMessage = {
+        id: aiMessageId,
+        text: '',
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
+
+      // Send request and handle response
+      sendMessage(
+        chatRequest,
+        (chunk) => {
+          // Update AI message with response
+          setChatMessages(prev =>
+            prev.map(msg =>
+              msg.id === aiMessageId
+                ? { ...msg, text: chunk }
+                : msg
+            )
+          );
+        },
+        (fullResponse: GeminiChatResponse) => {
+          setShowTyping(false);
+
+          console.log('Received response:', fullResponse.response);
+          console.log('Response length:', fullResponse.response?.length);
+
+          // Update the AI message with response
+          let finalText = fullResponse.response;
+
+          // Optional debug logging (only in development)
+          if (process.env.NODE_ENV === 'development') {
+            if (fullResponse.toolCalls && fullResponse.toolCalls.length > 0) {
+              console.log('🔧 Tools used:', fullResponse.toolCalls.length);
+            }
+            if (fullResponse.toolResults && fullResponse.toolResults.length > 0) {
+              console.log('📊 Tool results:', fullResponse.toolResults.length);
+            }
+          }
+
+          setChatMessages(prev =>
+            prev.map(msg =>
+              msg.id === aiMessageId
+                ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
+                : msg
+            )
+          );
+
+          // Response processed successfully
+
+              console.log('Gemini Response complete:', fullResponse);
+        }
+      ).catch((err) => {
+        setShowTyping(false);
+        console.error('Chat error details:', err);
+
+        // Provide more specific error messages
+        let errorMessage = "Failed to get response";
+        let errorDescription = "Please check your connection and try again.";
+
+        if (err.message?.includes('500')) {
+          errorMessage = "Server error";
+          errorDescription = "The AI service is temporarily unavailable. Please try again in a moment.";
+        } else if (err.message?.includes('429') || err.message?.includes('quota')) {
+          errorMessage = "Rate limit exceeded";
+          errorDescription = "Too many requests. Please wait a moment before trying again.";
+        } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+          errorMessage = "Connection error";
+          errorDescription = "Please check your internet connection and try again.";
+        }
+
+        showError(errorMessage, errorDescription);
+      });
+    }
+  };
 
   return (
-    <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-bold text-gray-900">CareerPivot</div>
-            <div className="hidden md:flex space-x-8">
-              <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
-              <a href="#functions" className="text-gray-600 hover:text-gray-900 transition-colors">Functions</a>
-              <a href="#advantages" className="text-gray-600 hover:text-gray-900 transition-colors">Advantages</a>
-              <a href="#specifications" className="text-gray-600 hover:text-gray-900 transition-colors">Specifications</a>
-            </div>
-            <div className="flex space-x-4">
-              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900 transition-colors">
-                Sign In
-              </Link>
-              <Link href="/auth/signup" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h1 className="text-6xl md:text-8xl font-bold text-gray-900 mb-8 leading-tight">
-              Feeling trapped?<br/>
-              Your potential unheard?<br/>
-              Feeling stuck?
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-12">
-              CareerPivot is a personal AI career strategist that learns your professional journey
-              and provides personalized transition roadmaps with actionable steps.
-            </p>
-            <Link href="/auth/signup" className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors inline-block">
-              Start Your Career Journey
-            </Link>
-          </div>
-
-          {/* Hero Images */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-            <div className="text-center">
-              <div className="w-64 h-64 mx-auto bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-4xl">💼</span>
+    <div className="min-h-screen bg-black flex flex-col relative">
+      {/* Main Content Area */}
+      <div className="flex flex-1">
+        {/* Left Sidebar - 250px width, dark theme */}
+        <aside className="w-[250px] bg-black text-white flex flex-col border-r border-gray-600" aria-label="Chat navigation">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-600 mb-4">
+            <button
+              onClick={handleNewChat}
+              className={`flex items-center gap-3 w-full text-left focus:outline-none rounded-lg p-2 -m-2 ${buttonHover}`}
+              aria-label="Create new chat"
+            >
+              <span className="text-white text-sm font-normal">new chat</span>
+              <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Plus className="w-3.5 h-3.5 text-gray-900" />
               </div>
-            </div>
-            <div className="text-center">
-              <div className="w-64 h-64 mx-auto bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-4xl">📈</span>
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="w-64 h-64 mx-auto bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-4xl">🎯</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">About CareerPivot</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              CareerPivot is a personal AI career strategist that learns thousands of career transition
-              stories from successful professionals. It provides personalized support that is proven by
-              real experience in helping people navigate career changes.
-            </p>
+            </button>
           </div>
 
-          {/* Team Section */}
-          <div className="text-center mb-16">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-8">Our Mission</h3>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              To help mid-career professionals break free from golden handcuffs and pursue fulfilling careers
-              with confidence and clarity.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Functions Section */}
-      <section id="functions" className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">How CareerPivot Helps</h2>
-          </div>
-
-          {/* Function Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {/* Analyze */}
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                <span className="text-3xl">🔍</span>
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Analyze</h3>
-              <p className="text-gray-600 mb-6">
-                CareerPivot actively analyzes your skills, experience, financial situation,
-                and career goals to understand your current position and aspirations.
-              </p>
-              <div className="space-y-3 text-left">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm italic text-gray-700">"I thought I was stuck, but CareerPivot showed me skills I didn't realize I had."</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm italic text-gray-700">"It mapped my transferable skills across different industries."</p>
+          {/* User Info */}
+          {session?.user && (
+            <div className="px-6 mb-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-900 border border-gray-700">
+                {session.user.image ? (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {session.user.name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {session.user.email}
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Plan */}
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6">
-                <span className="text-3xl">📋</span>
+              <button
+                onClick={() => signOut()}
+                className={`flex items-center gap-2 w-full mt-3 px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
+            </div>
+          )}
+
+          {!session && (
+            <div className="px-6 mb-4">
+              <a
+                href="/auth/signin"
+                className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-blue-400 hover:text-blue-300 hover:bg-gray-800 rounded-lg transition-colors duration-200"
+              >
+                <User className="w-4 h-4" />
+                Sign in
+              </a>
+            </div>
+          )}
+
+          {/* Chat History - Empty for now */}
+          <nav className="flex-1 overflow-y-auto p-4" aria-label="Chat history">
+            {/* Chat list would go here */}
+          </nav>
+        </aside>
+
+        {/* Main Center Content */}
+        <main className="flex-1 bg-black flex flex-col" role="main">
+          {/* Hero Section - Centered with proper vertical alignment */}
+          <div className="flex-1 flex items-center justify-center px-12 py-8">
+            <div className="text-center w-full max-w-2xl space-y-16">
+              {/* Welcome text with proper hierarchy */}
+              <div className="space-y-6">
+                <p className="text-white text-2xl font-normal leading-relaxed">welcome to</p>
+                {/* Gradient text with period included */}
+                <h1 className="text-7xl md:text-8xl font-bold leading-tight">
+                  <span className="bg-gradient-to-r from-blue-300 via-cyan-400 to-teal-600 bg-clip-text text-transparent">
+                    shftrr.
+                  </span>
+                </h1>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Plan</h3>
-              <p className="text-gray-600 mb-6">
-                By understanding your complete professional profile, CareerPivot creates
-                realistic transition roadmaps with specific milestones and timelines.
-              </p>
-              <div className="space-y-3 text-left">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm italic text-gray-700">"Finally had a clear 6-month plan instead of vague career advice."</p>
+
+              {/* Separator */}
+              <div className="w-full max-w-xs mx-auto h-px bg-gray-600 opacity-50 mb-8"></div>
+
+              {/* Chat History */}
+              {chatMessages.length > 0 && (
+                <div className="w-full max-w-lg mx-auto space-y-4 mb-8">
+                  {chatMessages.map((message, index) => (
+                    <div key={message.id} className={fadeInUp}>
+                      <div className={`p-4 rounded-lg transition-all duration-200 hover:shadow-lg ${
+                        message.isUser
+                          ? 'bg-gray-800 ml-auto max-w-sm hover:bg-gray-750'
+                          : 'bg-gray-900 mr-auto max-w-lg hover:bg-gray-850'
+                      }`}>
+                        {message.isUser ? (
+                          <p className="text-white text-sm leading-relaxed">{message.text}</p>
+                        ) : (
+                          <div className="prose prose-invert max-w-none">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                            >
+                              {message.text}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm italic text-gray-700">"Accounted for my mortgage and family obligations."</p>
-                </div>
-              </div>
-            </div>
+              )}
 
-            {/* Support */}
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto bg-purple-100 rounded-full flex items-center justify-center mb-6">
-                <span className="text-3xl">🤝</span>
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Support</h3>
-              <p className="text-gray-600 mb-6">
-                Based on comprehensive analysis, CareerPivot provides personalized career
-                guidance, skill development recommendations, and ongoing motivation.
-              </p>
-              <div className="space-y-3 text-left">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm italic text-gray-700">"Not alone anymore - CareerPivot believed in me when I doubted myself."</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm italic text-gray-700">"Weekly check-ins kept me accountable and motivated."</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+              {/* Typing Indicator */}
+              {showTyping && <TypingIndicator />}
 
-      {/* Advantages Section */}
-      <section id="advantages" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">Why CareerPivot?</h2>
-          </div>
+              {/* Separator before input */}
+              {chatMessages.length > 0 && (
+                <div className="w-full max-w-xs mx-auto h-px bg-gray-600 opacity-50 mb-8"></div>
+              )}
 
-          {/* Advantages Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-6">
-                <span className="text-2xl text-white">🎯</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Personalization</h3>
-              <p className="text-gray-600">
-                CareerPivot learns from your interactions and adapts its guidance to your
-                individual needs, preferences, and career goals.
-              </p>
-            </div>
+              {/* Input Field with proper UX */}
+              <div className="relative max-w-lg mx-auto">
+                <label htmlFor="main-input" className="sr-only">
+                  Start your conversation
+                </label>
+                <input
+                  id="main-input"
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={isLoading ? "AI is thinking..." : "Start here..."}
+                  disabled={isLoading}
+                  className={`w-full px-6 py-4 text-base rounded-lg border border-gray-500 bg-black text-white placeholder-gray-500 disabled:opacity-50 ${inputFocus}`}
+                  aria-label="Start your conversation"
+                />
 
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-green-600 rounded-full flex items-center justify-center mb-6">
-                <span className="text-2xl text-white">⏰</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">24/7 Availability</h3>
-              <p className="text-gray-600">
-                Career support is available whenever you need it - morning, night, or anytime
-                in between. No waiting for appointments or office hours.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-purple-600 rounded-full flex items-center justify-center mb-6">
-                <span className="text-2xl text-white">🔒</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Confidentiality</h3>
-              <p className="text-gray-600">
-                All your career discussions and personal information are encrypted and
-                completely private. Your career journey stays confidential.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-orange-600 rounded-full flex items-center justify-center mb-6">
-                <span className="text-2xl text-white">🎓</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Expert Knowledge</h3>
-              <p className="text-gray-600">
-                Unlike generic career advice, CareerPivot is trained on thousands of real
-                career transition success stories and professional guidance.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Target Audience Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">CareerPivot is for Everyone</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="w-24 h-24 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6">
-                <span className="text-4xl">😔</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Feeling Stuck in Your Role</h3>
-              <p className="text-gray-600">
-                You're competent and successful, but something feels missing. You want more purpose,
-                better work-life balance, or different challenges.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-24 h-24 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                <span className="text-4xl">💰</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Worried About Finances</h3>
-              <p className="text-gray-600">
-                You're in the "golden handcuffs" - good salary and benefits, but afraid to make
-                changes due to financial uncertainty and family obligations.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-24 h-24 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6">
-                <span className="text-4xl">🔄</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Considering a Career Switch</h3>
-              <p className="text-gray-600">
-                You're intrigued by a new field but don't know where to start. You need guidance
-                on skill gaps, networking, and transition strategies.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-24 h-24 mx-auto bg-purple-100 rounded-full flex items-center justify-center mb-6">
-                <span className="text-4xl">📈</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Ready for Leadership</h3>
-              <p className="text-gray-600">
-                You're ready to move into management or senior roles but need help positioning
-                yourself and developing the necessary leadership skills.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Specifications Section */}
-      <section id="specifications" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">How It Works</h2>
-          </div>
-
-          {/* Process Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl text-white font-bold">1</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign Up</h3>
-              <p className="text-gray-600">Create your account and complete our diagnostic quiz</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl text-white font-bold">2</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Get Analyzed</h3>
-              <p className="text-gray-600">AI analyzes your skills, finances, and career goals</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl text-white font-bold">3</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Receive Plan</h3>
-              <p className="text-gray-600">Get your personalized 6-month, 1-year, 2-year roadmap</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl text-white font-bold">4</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Take Action</h3>
-              <p className="text-gray-600">Execute your plan with ongoing AI support and guidance</p>
-            </div>
-          </div>
-
-          {/* Feature Specifications */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">CareerPivot Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">🎯 Career Analysis</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li>• Skills assessment and gap analysis</li>
-                  <li>• Industry fit evaluation</li>
-                  <li>• Salary expectation setting</li>
-                  <li>• Career path recommendations</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">💰 Financial Planning</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li>• Emergency fund calculations</li>
-                  <li>• Budget optimization</li>
-                  <li>• Salary bridge analysis</li>
-                  <li>• Transition cost planning</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">📚 Learning & Development</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li>• Certification recommendations</li>
-                  <li>• Skill development roadmaps</li>
-                  <li>• Course and training suggestions</li>
-                  <li>• Progress tracking</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">🤝 Ongoing Support</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li>• Personalized action plans</li>
-                  <li>• Weekly progress check-ins</li>
-                  <li>• Motivation and accountability</li>
-                  <li>• Career coaching insights</li>
-                </ul>
+                {/* Error Display */}
+                {error && (
+                  <div className="mt-2 p-2 bg-red-900/20 border border-red-700 rounded text-red-400 text-sm">
+                    Error: {error}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </main>
+      </div>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-600">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Transform Your Career?
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Join thousands of professionals who have successfully navigated their career transitions with CareerPivot.
-          </p>
-          <Link href="/auth/signup" className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-block">
-            Start Your Journey Today
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center">
-            <div className="text-2xl font-bold mb-4">CareerPivot</div>
-            <p className="text-gray-400 mb-8">
-              Your AI-powered career transition companion
-            </p>
-            <div className="flex justify-center space-x-6">
-              <Link href="/auth/login" className="text-gray-400 hover:text-white transition-colors">
-                Sign In
-              </Link>
-              <Link href="/auth/signup" className="text-gray-400 hover:text-white transition-colors">
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Upgrade Prompt */}
+      {showUpgradePrompt && (
+        <UpgradePrompt onDismiss={() => setShowUpgradePrompt(false)} />
+      )}
     </div>
-  )
+  );
 }

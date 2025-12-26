@@ -1,1 +1,239 @@
-System Instruction for Cursor Rules: "I am building CareerPivot, a SaaS for mid-career transitions. Tech Stack: Next.js (App Router), TypeScript, Tailwind CSS, Shadcn/UI, Supabase (Auth/DB). Coding Style: Use functional components, Lucide icons, and server actions for data fetching. Always implement error handling and loading states for AI-driven features."
+# Career Pivot Coach - Cursor Rules
+
+## Project Overview
+Career Pivot Coach is an AI-powered career coaching system that provides personalized career transition guidance through a local large language model. The system includes model fine-tuning, a FastAPI backend, and a Next.js frontend dashboard.
+
+## Tech Stack
+- **Frontend**: Next.js 15 with TypeScript, Tailwind CSS, Shadcn/UI components
+- **Backend**: FastAPI with Python (functional programming style)
+- **AI/ML**: Ollama with local Llama models (fine-tuned for career coaching)
+- **Data Processing**: Local processing only (no external APIs for sensitive data)
+
+## Architecture
+```
+/
+├── train/           # Model fine-tuning and training logic
+├── app/            # Next.js frontend application
+├── server/         # FastAPI backend server
+├── models/         # Local model storage (GGUF files)
+└── docs/           # Documentation and examples
+```
+
+## Privacy & Security (CRITICAL)
+- **NEVER** log, store, or transmit user career data, financial information, or personal details to external APIs
+- **ALWAYS** process all sensitive data locally through the Ollama SLM
+- **NO EXTERNAL DEPENDENCIES** for user data processing
+- Use localStorage for frontend state, never send to servers
+- Implement proper error handling that doesn't expose user data
+
+## Coding Standards
+
+### Frontend (TypeScript/Next.js)
+- **Language**: TypeScript (strict mode enabled)
+- **Framework**: Next.js 15 with App Router
+- **Styling**: Tailwind CSS with Shadcn/UI components
+- **State Management**: React hooks (useState, useEffect, custom hooks)
+- **Data Fetching**: Native fetch API with proper error handling
+- **File Structure**: Feature-based organization
+- **Naming**: camelCase for variables/functions, PascalCase for components
+- **Imports**: Absolute imports with @/ alias
+- **Error Handling**: Try-catch blocks with user-friendly messages
+
+### Backend (Python/FastAPI)
+- **Language**: Python 3.8+ (functional programming paradigm)
+- **Framework**: FastAPI with async/await patterns
+- **Style**: Functional programming - pure functions, immutability, no side effects
+- **Data Structures**: Typed dictionaries, dataclasses over classes
+- **Error Handling**: Custom exceptions with proper HTTP status codes
+- **Logging**: Structured logging (no sensitive data)
+- **Dependencies**: Minimal, pinned versions
+- **File Structure**: Modular, single responsibility principle
+
+### AI/ML (Gemini API Integration)
+- **Models**: Gemini API for conversational career coaching
+- **Response Formatting**: High scannability and professional white space
+- **Paragraph Structure**: Maximum 3 sentences per paragraph
+- **Spacing**: Double line breaks between ALL paragraphs and sections
+- **Headers**: Use ## and ### to separate major ideas and subsections
+- **Lists**: For more than 2 questions/points, ALWAYS use bulleted (•) or numbered (1.) lists
+- **Bolding**: **Bold key terms** and **calls to action** to guide the user's eye
+- **Prompt Engineering**: Structured, role-based system prompts
+- **Streaming**: Server-Sent Events for real-time responses
+- **Validation**: Input sanitization and output filtering
+
+## Development Workflow
+
+### Model Training (/train)
+1. Dataset generation with diverse career scenarios
+2. Fine-tuning with LoRA for efficiency
+3. Local validation and testing
+4. Export to GGUF format for Ollama
+
+### Backend Development (/server)
+1. API-first design with OpenAPI specification
+2. Comprehensive error handling
+3. Input validation and sanitization
+4. Streaming response implementation
+5. Health checks and monitoring
+
+### Frontend Development (/app)
+1. Component-driven architecture
+2. Responsive design (mobile-first)
+3. Accessibility (WCAG 2.1 AA)
+4. Performance optimization
+5. Progressive enhancement
+
+## Code Quality
+
+### General Rules
+- **No console.log** in production code
+- **Comprehensive error handling** at all levels
+- **Input validation** on both client and server
+- **Type safety** throughout the application
+- **Documentation** for all public APIs and complex logic
+- **Testing** for critical user paths
+
+### Security
+- **CORS** properly configured for local development
+- **Content Security Policy** headers
+- **Input sanitization** to prevent injection attacks
+- **Rate limiting** on API endpoints
+- **Secure defaults** (HTTPS in production)
+
+### Performance
+- **Lazy loading** for components and routes
+- **Image optimization** and WebP format
+- **Bundle size** monitoring
+- **Caching strategies** for static assets
+- **Streaming responses** for large data
+
+## File Organization
+
+### /train (Model Training)
+```
+train/
+├── data/           # Training datasets
+├── models/         # Model configurations
+├── scripts/        # Training and evaluation scripts
+├── config/         # Training hyperparameters
+└── notebooks/      # Jupyter notebooks for experimentation
+```
+
+### /app (Frontend)
+```
+app/
+├── components/     # Reusable UI components
+├── lib/           # Utilities and hooks
+├── styles/        # Global styles and themes
+├── types/         # TypeScript type definitions
+└── utils/         # Helper functions
+```
+
+### /server (Backend)
+```
+server/
+├── api/           # API route handlers
+├── core/          # Core business logic
+├── models/        # Pydantic models
+├── services/      # External service integrations
+├── utils/         # Utility functions
+└── tests/         # Test files
+```
+
+## Communication Patterns
+
+### API Design
+- RESTful endpoints with consistent naming
+- JSON request/response format
+- Proper HTTP status codes
+- Comprehensive error responses
+- API versioning strategy
+
+### Real-time Features
+- Server-Sent Events for streaming responses
+- WebSocket fallback for older browsers
+- Connection error handling and reconnection
+- Message queuing for offline scenarios
+
+## Deployment
+
+### Local Development
+- Docker Compose for full-stack development
+- Hot reloading for all services
+- Local Ollama instance
+- Development-specific configurations
+
+### Production
+- Containerized deployment
+- Reverse proxy configuration
+- SSL/TLS termination
+- Monitoring and logging
+- Backup strategies
+
+## Testing Strategy
+
+### Unit Tests
+- Component testing (Jest/React Testing Library)
+- API endpoint testing (pytest)
+- Utility function testing
+- Mock external dependencies
+
+### Integration Tests
+- End-to-end user flows
+- API integration testing
+- Database operations
+- File upload/download
+
+### Performance Testing
+- Load testing for concurrent users
+- Memory usage monitoring
+- Response time benchmarks
+- Streaming performance metrics
+
+## Documentation
+
+### Code Documentation
+- JSDoc comments for complex functions
+- TypeScript interfaces with descriptions
+- Python docstrings following Google style
+- Inline comments for complex logic
+
+### User Documentation
+- README files for each major component
+- API documentation with examples
+- Deployment guides
+- Troubleshooting guides
+
+## Version Control
+
+### Branching Strategy
+- `main` - Production-ready code
+- `develop` - Integration branch
+- `feature/*` - Feature development
+- `hotfix/*` - Critical bug fixes
+
+### Commit Messages
+- Clear, descriptive messages
+- Reference issue numbers
+- Use conventional commit format
+- Include breaking changes notes
+
+## Monitoring & Maintenance
+
+### Logging
+- Structured logging with consistent format
+- Log levels (DEBUG, INFO, WARN, ERROR)
+- Log aggregation and analysis
+- Alert configuration for errors
+
+### Health Checks
+- Application health endpoints
+- Database connectivity checks
+- External service availability
+- Resource usage monitoring
+
+### Updates
+- Regular dependency updates
+- Security patch monitoring
+- Model performance monitoring
+- User feedback integration
