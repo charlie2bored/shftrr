@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, LogOut, User, MessageSquare } from 'lucide-react';
+import { Plus, LogOut, User, MessageSquare, Settings } from 'lucide-react';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { useGeminiChat, type GeminiChatRequest, type GeminiChatResponse } from '@/lib/use-gemini-chat';
 import ReactMarkdown from 'react-markdown';
@@ -10,6 +10,117 @@ import { TypingIndicator } from '@/components/Skeleton';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { useToast } from '@/lib/toast-context';
 import { buttonHover, inputFocus, cardHover, fadeInUp } from '@/lib/animations';
+
+// Settings Modal Component
+function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [theme, setTheme] = useState('dark');
+  const [notifications, setNotifications] = useState(true);
+  const [autoSave, setAutoSave] = useState(true);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-white">Account Settings</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white text-2xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Theme Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Theme
+            </label>
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="dark">Dark</option>
+              <option value="light">Light (Coming Soon)</option>
+              <option value="auto">Auto (Coming Soon)</option>
+            </select>
+          </div>
+
+          {/* Notifications */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-300">Notifications</h3>
+              <p className="text-xs text-gray-500">Receive updates about your career journey</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={notifications}
+                onChange={(e) => setNotifications(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {/* Auto Save */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-300">Auto Save</h3>
+              <p className="text-xs text-gray-500">Automatically save conversations</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSave}
+                onChange={(e) => setAutoSave(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {/* Account Actions */}
+          <div className="border-t border-gray-700 pt-4">
+            <h3 className="text-sm font-medium text-gray-300 mb-3">Account</h3>
+            <div className="space-y-2">
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                Export Data
+              </button>
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                Privacy Settings
+              </button>
+              <button className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition-colors">
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 text-sm text-gray-300 hover:text-white border border-gray-600 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              // Save settings logic would go here
+              onClose();
+            }}
+            className="flex-1 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface ChatMessage {
   id: string;
@@ -38,6 +149,7 @@ export default function ShftrrDashboard() {
   const [ventText, setVentText] = useState('');
   const [showTyping, setShowTyping] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Get current chat session
   const currentChat = chatSessions.find(session => session.id === currentChatId);
@@ -281,9 +393,9 @@ export default function ShftrrDashboard() {
         (chunk) => {
           // Update AI message with response
           const updatedMessages = chatMessages.map(msg =>
-            msg.id === aiMessageId
-              ? { ...msg, text: chunk }
-              : msg
+              msg.id === aiMessageId
+                ? { ...msg, text: chunk }
+                : msg
           );
           updateCurrentChatMessages(updatedMessages);
         },
@@ -307,9 +419,9 @@ export default function ShftrrDashboard() {
           }
 
           const finalMessages = chatMessages.map(msg =>
-            msg.id === aiMessageId
-              ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
-              : msg
+              msg.id === aiMessageId
+                ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
+                : msg
           );
           updateCurrentChatMessages(finalMessages);
 
@@ -407,63 +519,76 @@ export default function ShftrrDashboard() {
 
           {/* User Info and Actions - Fixed at bottom */}
           <div className="border-t border-gray-600 p-4">
-            {/* Test User Button */}
-            <button
-              onClick={async () => {
-                try {
-                  await signIn('credentials', {
-                    email: 'test@example.com',
-                    password: 'password123',
-                    redirect: false,
-                  });
-                  success('Signed in as test user', 'Welcome back!');
-                } catch (error) {
-                  showError('Sign in failed', 'Could not sign in as test user');
-                }
-              }}
-              className={`flex items-center gap-2 w-full mb-3 px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
-            >
-              <User className="w-4 h-4" />
-              Test User
-            </button>
-
+            {/* Settings Button */}
             {session?.user && (
+              <button
+                onClick={() => setShowSettings(true)}
+                className={`flex items-center gap-2 w-full mb-3 px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+            )}
+
+            {/* Test User Button - Development Only */}
+            {process.env.NODE_ENV === 'development' && !session?.user && (
+              <button
+                onClick={async () => {
+                  try {
+                    await signIn('credentials', {
+                      email: 'test@example.com',
+                      password: 'password123',
+                      redirect: false,
+                    });
+                    success('Signed in as test user', 'Welcome back!');
+                  } catch (error) {
+                    showError('Sign in failed', 'Could not sign in as test user');
+                  }
+                }}
+                className={`flex items-center gap-2 w-full mb-3 px-3 py-2 text-left text-sm text-orange-400 hover:text-orange-300 hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
+              >
+                <User className="w-4 h-4" />
+                Test User (Dev)
+              </button>
+            )}
+
+          {session?.user && (
               <>
                 {/* User Profile */}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-900 border border-gray-700 mb-3">
-                  {session.user.image ? (
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name || "User"}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                      <User className="w-4 h-4" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {session.user.name}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">
-                      {session.user.email}
-                    </p>
+                {session.user.image ? (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                    <User className="w-4 h-4" />
                   </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {session.user.name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {session.user.email}
+                  </p>
                 </div>
+              </div>
 
                 {/* Sign Out Button */}
-                <button
-                  onClick={() => signOut()}
+              <button
+                onClick={() => signOut()}
                   className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign out
-                </button>
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
               </>
-            )}
+          )}
 
-            {!session && (
+          {!session && (
               <a
                 href="/auth/signin"
                 className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-blue-400 hover:text-blue-300 hover:bg-gray-800 rounded-lg transition-colors duration-200"
@@ -472,7 +597,7 @@ export default function ShftrrDashboard() {
                 Sign in
               </a>
             )}
-          </div>
+            </div>
         </aside>
 
         {/* Main Center Content */}
@@ -574,6 +699,12 @@ export default function ShftrrDashboard() {
       {showUpgradePrompt && (
         <UpgradePrompt onDismiss={() => setShowUpgradePrompt(false)} />
       )}
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </div>
   );
 }
