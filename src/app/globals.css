@@ -46,12 +46,14 @@
   /* Clean prose styling for shftrr. chat */
   .prose {
     color: #ffffff;
-    font-size: 15px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
   }
 
   .prose p {
-    margin-bottom: 1.25rem;
-    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
   }
 
   .prose h1 {
