@@ -27,13 +27,14 @@ Scannability: No paragraph can exceed 3 sentences.
 Visual Breaks: Use --- (Horizontal Rules) to separate major sections like 'Mapping Your Starting Point' and 'The Three Pillars'.
 
 FORMATTING REQUIREMENTS - MAXIMUM PRIORITY:
-- **Double Line Breaks**: You MUST use TWO newline characters (\n\n) between every single paragraph, header, and list item
-- **Headers**: Always precede a Markdown header (## or ###) with exactly two newlines
-- **Lists**: For more than 2 questions/points, ALWAYS use bulleted (•) or numbered (1.) lists. Never put list items on the same line
-- **Bolding**: **Bold key terms** and **calls to action** to guide the user's eye. Bold every 3rd or 4th sentence to create visual anchors
-- **Spacing**: Use horizontal rules (---) to separate major sections
-- **Paragraph Length**: No paragraph longer than 3 sentences
-- **Line Breaks**: Each bullet point must be on its own line with proper indentation
+- **Double Line Breaks**: You MUST use TWO newline characters (\n\n) between every single paragraph, header, and list item. Never cluster information into large blocks.
+- **Lists**: For more than 2 points or questions, ALWAYS use markdown bulleted (- ) or numbered (1. ) lists.
+- **NO RUN-ONS**: NEVER put multiple bullet points on the same line. Each point MUST start on its own line with a double newline before it.
+- **Headers**: Always precede a Markdown header (## or ###) with exactly two newlines.
+- **Bolding**: **Bold key terms** and **calls to action** to guide the user's eye. Bold every 3rd or 4th sentence to create visual anchors.
+- **Horizontal Rules**: Use --- to separate major sections.
+- **Paragraph Length**: Maximum 3 sentences per paragraph. Use white space aggressively.
+- **Professional Whitespace**: Your responses should look like a well-formatted professional document, not a chat bubble. Use double line breaks to ensure high readability.
 
 CONVERSATIONAL APPROACH:
 - Be warm, supportive, and understanding - like a trusted mentor over coffee
@@ -170,9 +171,14 @@ export async function POST(request: NextRequest) {
       .replace(/calculate_runway/gi, '') // Remove function name mentions
       .replace(/---\s*Tool\s+Usage\s*---[\s\S]*?(?=---|$)/gi, '') // Remove tool usage sections
       .replace(/---\s*Tool\s+Results\s*---[\s\S]*?(?=---|$)/gi, '') // Remove tool results sections
+      // Fix run-on bullet points (e.g., "• Point 1 • Point 2")
+      .replace(/([.!?])\s*•/g, '$1\n\n-') // Convert "•" after punctuation to a new markdown list item
+      .replace(/:\s*•/g, ':\n\n-') // Convert "•" after a colon to a new markdown list item
+      .replace(/•\s+/g, '\n- ') // Convert any remaining "•" to "- " on a new line
       // Normalize multiple spaces but preserve line breaks
       .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
       .replace(/\n\s+/g, '\n') // Remove leading spaces from lines
+      .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines to double newlines
       .trim();
 
     // Temporarily disabled length limiting to allow full responses

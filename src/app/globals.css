@@ -86,7 +86,17 @@
     text-decoration: underline;
   }
 
-  .prose a:hover {
-    color: #93c5fd;
+  .prose p {
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+  }
+
+  .prose ul, .prose ol {
+    margin-bottom: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .prose li {
+    margin-bottom: 0.75rem;
   }
 }
