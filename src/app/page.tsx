@@ -309,7 +309,7 @@ export default function ShftrrDashboard() {
                       {message.isUser ? (
                         <p className="text-white text-[14px] font-normal leading-relaxed">{message.text}</p>
                       ) : (
-                        <div className="prose prose-invert max-w-none">
+                        <div className="shftrr-response max-w-none">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{

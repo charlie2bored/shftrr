@@ -43,62 +43,97 @@
     overflow: hidden;
   }
 
-  /* Clean prose styling for shftrr. chat - Override prose-invert defaults */
-  .prose,
-  .prose-invert {
-    color: #ffffff !important;
-    font-size: 14px !important;
-    font-weight: 400 !important;
+  /* Custom shftrr response styling - NO Tailwind prose interference */
+  .shftrr-response {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 400;
     letter-spacing: 0.01em;
-  }
-
-  .prose p,
-  .prose-invert p {
-    margin-bottom: 1.5rem;
     line-height: 1.7;
-    font-size: 14px !important;
-    font-weight: 400 !important;
   }
 
-  .prose strong,
-  .prose-invert strong {
-    font-weight: 600 !important;
+  .shftrr-response p {
+    margin-bottom: 1.25rem;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.7;
+    color: #ffffff;
   }
 
-  .prose h1,
-  .prose-invert h1 {
-    font-size: 1.25rem !important;
-    font-weight: 600 !important;
+  .shftrr-response strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .shftrr-response em {
+    font-size: 14px;
+    font-weight: 400;
+    font-style: italic;
+    color: #ffffff;
+  }
+
+  .shftrr-response h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
     margin-top: 1.5rem;
     margin-bottom: 0.75rem;
+    color: #ffffff;
   }
 
-  .prose h2,
-  .prose-invert h2 {
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
+  .shftrr-response h2 {
+    font-size: 1rem;
+    font-weight: 600;
     margin-top: 1.25rem;
     margin-bottom: 0.5rem;
+    color: #ffffff;
   }
 
-  .prose h3,
-  .prose-invert h3 {
-    font-size: 1rem !important;
-    font-weight: 500 !important;
+  .shftrr-response h3 {
+    font-size: 0.95rem;
+    font-weight: 500;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
+    color: #ffffff;
   }
 
-  .prose ul, .prose ol,
-  .prose-invert ul, .prose-invert ol {
+  .shftrr-response ul,
+  .shftrr-response ol {
     margin-bottom: 1.25rem;
     margin-top: 0.75rem;
+    padding-left: 1.5rem;
   }
 
-  .prose li,
-  .prose-invert li {
+  .shftrr-response li {
     margin-bottom: 0.5rem;
-    font-size: 14px !important;
-    font-weight: 400 !important;
+    font-size: 14px;
+    font-weight: 400;
+    color: #ffffff;
+  }
+
+  .shftrr-response hr {
+    border-color: #374151;
+    margin: 1.5rem 0;
+  }
+
+  .shftrr-response blockquote {
+    border-left: 3px solid #3b82f6;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: #d1d5db;
+    font-style: italic;
+  }
+
+  .shftrr-response a {
+    color: #60a5fa;
+    text-decoration: underline;
+  }
+
+  .shftrr-response code {
+    background-color: #374151;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 13px;
+    font-family: 'Geist Mono', monospace;
   }
 }

@@ -62,7 +62,7 @@ export function RoadmapPanel({ response, isLoading, isStreaming = false }: Roadm
           )}
 
           {response && (
-            <div className="max-w-none">
+            <div className="shftrr-response max-w-none">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
