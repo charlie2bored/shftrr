@@ -16,26 +16,24 @@ const requestSchema = z.object({
 
 const systemInstruction = `You are an empathetic career coach and trusted advisor. Your goal is to help professionals navigate career changes with confidence and clarity.
 
-### Formatting Constraints:
+### FORMATTING CONSTRAINTS - ABSOLUTE PRIORITY:
 
 You are a Career Strategist for shftrr.
 
-1. **The "Airy" Rule**: Every paragraph MUST be 1-2 sentences maximum. NEVER write a paragraph with 3 or more sentences. Use double line breaks (\n\n) aggressively between EVERY paragraph.
-
-2. **The Opening Statement**: Always start with a warm, 1-sentence reaction to the user's input. No bolding in the first paragraph.
-
-3. **Minimalist Bolding**: Use bolding ONLY for **critical breakthroughs** or **specific action items**. Never bold more than 3 words in a single paragraph.
-
-4. **Strategic Italics**: Use *italics* for personal emphasis (e.g., *your* journey, *this* transition).
-
+CRITICAL FORMATTING RULES (VIOLATION WILL BREAK THE SYSTEM):
+1. **ABSOLUTELY NO BOLD TEXT**: Do NOT use **bold** formatting ANYWHERE in your response. No **bold**, no **asterisks**, no **markdown bold**. Plain text only.
+2. **The "Airy" Rule**: Every paragraph MUST be 1-2 sentences maximum. NEVER write a paragraph with 3 or more sentences. Use double line breaks (\n\n) aggressively between EVERY paragraph.
+3. **Opening Statement**: Always start with a warm, 1-sentence reaction to the user's input. Keep it plain text.
+4. **Strategic Italics**: Use *italics* sparingly for personal emphasis (e.g., *your* journey, *this* transition).
 5. **Section Dividers**: Use --- (Horizontal Rules) frequently to separate major conceptual shifts.
+6. **Lists**: Use plain text bulleted lists with - (dash). Each list item must have a double newline before it.
 
 FORMATTING REQUIREMENTS - MAXIMUM PRIORITY:
-- **NEVER BOLD ENTIRE PARAGRAPHS**: Do NOT wrap entire sentences or paragraphs in **bold**. Only bold 2-3 specific words like job titles or key terms.
+- **NO BOLD TEXT ANYWHERE**: This is the most important rule. Never use **bold** markdown. Never use **asterisks** for bold.
 - **Max 2 Sentences per Paragraph**: This is non-negotiable for readability.
 - **Double Line Breaks**: You MUST use TWO newline characters (\n\n) between every single paragraph, header, and list item.
-- **No Bold in First 3 Paragraphs**: Keep the opening paragraphs clean plain text.
-- **Lists**: Use markdown bulleted (- ) lists. Each list item must have a double newline before it.
+- **Plain Text Only**: Keep all text plain and readable. No bold, no emphasis except occasional italics.
+- **Lists**: Use - (dash) for bullets. Each list item must have a double newline before it.
 - **Scannability**: The response should look like a series of short, impactful insights rather than a long letter.
 
 CONVERSATIONAL APPROACH:
@@ -177,9 +175,14 @@ export async function POST(request: NextRequest) {
       .replace(/([.!?])\s*•/g, '$1\n\n-') // Convert "•" after punctuation to a new markdown list item
       .replace(/:\s*•/g, ':\n\n-') // Convert "•" after a colon to a new markdown list item
       .replace(/•\s+/g, '\n- ') // Convert any remaining "•" to "- " on a new line
-      // FIX FULLY BOLDED PARAGRAPHS: Remove ** from paragraphs that are entirely bold
-      .replace(/^\*\*([^*]+)\*\*$/gm, '$1') // Remove **...** from single-line paragraphs
+      // AGGRESSIVELY REMOVE ALL FORMATTING MARKDOWN: This is critical to prevent bold/large text
+      .replace(/^#+\s*/gm, '') // Remove ALL header markdown (# ## ###)
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove ALL **bold** markdown, including inline
+      .replace(/\*([^*]+)\*/g, '$1') // Remove *italic* markdown that might be confused
+      .replace(/^\*\*([^*]+)\*\*$/gm, '$1') // Remove **...** from entire lines
       .replace(/\n\*\*([^*]+)\*\*\n/g, '\n$1\n') // Remove **...** from paragraphs between newlines
+      .replace(/\*\*([^*]{1,50})\*\*/g, '$1') // Catch any remaining short bold phrases
+      .replace(/`([^`]+)`/g, '$1') // Remove code formatting
       // Normalize multiple spaces but preserve line breaks
       .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
       .replace(/\n\s+/g, '\n') // Remove leading spaces from lines

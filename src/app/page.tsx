@@ -313,19 +313,19 @@ export default function ShftrrDashboard() {
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
-                              h1: ({ children }) => <h1 className="text-lg font-bold text-white mb-4 mt-6 first:mt-0">{children}</h1>,
-                              h2: ({ children }) => <h2 className="text-base font-semibold text-white mb-3 mt-6">{children}</h2>,
-                              h3: ({ children }) => <h3 className="text-sm font-medium text-white mb-2 mt-4">{children}</h3>,
+                              h1: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
+                              h2: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
+                              h3: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
                               p: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
                               ul: ({ children }) => <ul className="text-white mb-4 space-y-2 ml-6 list-disc">{children}</ul>,
                               ol: ({ children }) => <ol className="text-white mb-4 space-y-2 ml-6 list-decimal">{children}</ol>,
                               li: ({ children }) => <li className="text-[14px] font-normal leading-relaxed mb-2">{children}</li>,
-                              strong: ({ children }) => <strong className="text-white font-bold">{children}</strong>,
+                              strong: ({ children }) => <span className="text-white font-normal">{children}</span>,
                               em: ({ children }) => <em className="text-white italic">{children}</em>,
                               blockquote: ({ children }) => (
-                                <blockquote className="border-l-4 border-blue-500 pl-6 my-6 text-white italic bg-slate-800/30 py-4 px-6 rounded-r-lg">
+                                <div className="border-l-4 border-blue-500 pl-6 my-6 text-white italic bg-slate-800/30 py-4 px-6 rounded-r-lg">
                                   {children}
-                                </blockquote>
+                                </div>
                               ),
                             }}
                           >
