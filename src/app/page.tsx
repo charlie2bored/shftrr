@@ -38,6 +38,37 @@ export default function ShftrrDashboard() {
     setIsClient(true);
   }, []);
 
+  // Load chat messages from localStorage on component mount
+  useEffect(() => {
+    if (isClient) {
+      try {
+        const savedMessages = localStorage.getItem('shftrr-chat-messages');
+        if (savedMessages) {
+          const parsedMessages = JSON.parse(savedMessages);
+          // Convert timestamp strings back to Date objects
+          const messagesWithDates = parsedMessages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          setChatMessages(messagesWithDates);
+        }
+      } catch (error) {
+        console.error('Error loading chat messages from localStorage:', error);
+      }
+    }
+  }, [isClient]);
+
+  // Save chat messages to localStorage whenever they change
+  useEffect(() => {
+    if (isClient && chatMessages.length > 0) {
+      try {
+        localStorage.setItem('shftrr-chat-messages', JSON.stringify(chatMessages));
+      } catch (error) {
+        console.error('Error saving chat messages to localStorage:', error);
+      }
+    }
+  }, [chatMessages, isClient]);
+
   // Prevent hydration mismatch by not rendering until client-side
   if (!isClient || status === "loading") {
     return (
@@ -83,7 +114,14 @@ export default function ShftrrDashboard() {
   }
 
   const handleNewChat = () => {
-    // Handle new chat creation
+    // Clear all chat messages and reset state
+    setChatMessages([]);
+    setVentText('');
+    setInputValue('');
+    setShowTyping(false);
+    setShowUpgradePrompt(false);
+    // Show success toast
+    success("New chat started", "Ready for a fresh conversation!");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
