@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
 
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
+
 export default function SignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

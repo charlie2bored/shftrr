@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
 
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
