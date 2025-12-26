@@ -15,23 +15,27 @@ users.push({
 });
 
 export const authOptions: NextAuthOptions = {
+  baseURL: process.env.NEXTAUTH_URL || (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:3000'),
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
     CredentialsProvider({
+      id: "credentials",
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: "Email", type: "email", placeholder: "test@example.com" },
+        password: { label: "Password", type: "password", placeholder: "password123" }
       },
       async authorize(credentials) {
-        console.log("🔐 Auth attempt:", { email: credentials?.email });
+        console.log("🔐 Auth attempt - Raw credentials:", credentials);
+        console.log("🔐 Auth attempt - Email:", credentials?.email, "Password exists:", !!credentials?.password);
 
         if (!credentials?.email || !credentials?.password) {
           console.log("❌ Missing credentials");
-          return null;
+          throw new Error("Email and password are required");
         }
 
         // Find user in memory store
@@ -40,13 +44,13 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) {
           console.log("❌ User not found in store");
-          return null;
+          throw new Error("Invalid email or password");
         }
 
         // Simple password check (in production, use bcrypt)
         if (user.password !== credentials.password) {
           console.log("❌ Password mismatch");
-          return null;
+          throw new Error("Invalid email or password");
         }
 
         console.log("✅ Authentication successful");
