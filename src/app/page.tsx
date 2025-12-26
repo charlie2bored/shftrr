@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, LogOut, User } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
+import { Plus, LogOut, User, MessageSquare } from 'lucide-react';
+import { useSession, signOut, signIn } from 'next-auth/react';
 import { useGeminiChat, type GeminiChatRequest, type GeminiChatResponse } from '@/lib/use-gemini-chat';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -20,54 +20,155 @@ interface ChatMessage {
   toolResults?: any[];
 }
 
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default function ShftrrDashboard() {
   const { data: session, status } = useSession();
   const [inputValue, setInputValue] = useState('');
   const [isClient, setIsClient] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [resumeText, setResumeText] = useState('');
   const [ventText, setVentText] = useState('');
   const [showTyping, setShowTyping] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  // Get current chat session
+  const currentChat = chatSessions.find(session => session.id === currentChatId);
+  const chatMessages = currentChat?.messages || [];
   const { sendMessage, isLoading, error } = useGeminiChat(undefined, () => {
     setShowUpgradePrompt(true);
   });
   const { success, error: showError } = useToast();
 
+  // Chat session management functions
+  const createNewChat = (): string => {
+    const newChatId = Date.now().toString();
+    const newChat: ChatSession = {
+      id: newChatId,
+      title: 'New Chat',
+      messages: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    setChatSessions(prev => [newChat, ...prev]);
+    setCurrentChatId(newChatId);
+    return newChatId;
+  };
+
+  const switchToChat = (chatId: string) => {
+    setCurrentChatId(chatId);
+  };
+
+  const deleteChat = (chatId: string) => {
+    setChatSessions(prev => prev.filter(session => session.id !== chatId));
+    if (currentChatId === chatId) {
+      // If we're deleting the current chat, switch to the first available chat or create a new one
+      const remainingChats = chatSessions.filter(session => session.id !== chatId);
+      if (remainingChats.length > 0) {
+        setCurrentChatId(remainingChats[0].id);
+      } else {
+        createNewChat();
+      }
+    }
+  };
+
+  const updateChatTitle = (chatId: string, title: string) => {
+    setChatSessions(prev => prev.map(session =>
+      session.id === chatId
+        ? { ...session, title, updatedAt: new Date() }
+        : session
+    ));
+  };
+
+  const generateChatTitle = (messages: ChatMessage[]): string => {
+    if (messages.length === 0) return 'New Chat';
+
+    // Use the first user message as the title, truncated to 30 characters
+    const firstUserMessage = messages.find(msg => msg.isUser);
+    if (firstUserMessage) {
+      return firstUserMessage.text.length > 30
+        ? firstUserMessage.text.substring(0, 30) + '...'
+        : firstUserMessage.text;
+    }
+
+    return 'New Chat';
+  };
+
+  const updateCurrentChatMessages = (messages: ChatMessage[]) => {
+    if (!currentChatId) return;
+
+    setChatSessions(prev => prev.map(session =>
+      session.id === currentChatId
+        ? {
+            ...session,
+            messages,
+            title: generateChatTitle(messages),
+            updatedAt: new Date()
+          }
+        : session
+    ));
+  };
+
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Load chat messages from localStorage on component mount
+  // Load chat sessions from localStorage on component mount
   useEffect(() => {
     if (isClient) {
       try {
-        const savedMessages = localStorage.getItem('shftrr-chat-messages');
-        if (savedMessages) {
-          const parsedMessages = JSON.parse(savedMessages);
+        const savedSessions = localStorage.getItem('shftrr-chat-sessions');
+        if (savedSessions) {
+          const parsedSessions = JSON.parse(savedSessions);
           // Convert timestamp strings back to Date objects
-          const messagesWithDates = parsedMessages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
+          const sessionsWithDates = parsedSessions.map((session: any) => ({
+            ...session,
+            createdAt: new Date(session.createdAt),
+            updatedAt: new Date(session.updatedAt),
+            messages: session.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }))
           }));
-          setChatMessages(messagesWithDates);
+          setChatSessions(sessionsWithDates);
+
+          // Set current chat to the most recently updated one
+          if (sessionsWithDates.length > 0) {
+            const mostRecent = sessionsWithDates.reduce((prev: ChatSession, current: ChatSession) =>
+              prev.updatedAt > current.updatedAt ? prev : current
+            );
+            setCurrentChatId(mostRecent.id);
+          }
+        } else {
+          // Create initial chat session if none exist
+          createNewChat();
         }
       } catch (error) {
-        console.error('Error loading chat messages from localStorage:', error);
+        console.error('Error loading chat sessions from localStorage:', error);
+        // Create initial chat session on error
+        createNewChat();
       }
     }
   }, [isClient]);
 
-  // Save chat messages to localStorage whenever they change
+  // Save chat sessions to localStorage whenever they change
   useEffect(() => {
-    if (isClient && chatMessages.length > 0) {
+    if (isClient && chatSessions.length > 0) {
       try {
-        localStorage.setItem('shftrr-chat-messages', JSON.stringify(chatMessages));
+        localStorage.setItem('shftrr-chat-sessions', JSON.stringify(chatSessions));
       } catch (error) {
-        console.error('Error saving chat messages to localStorage:', error);
+        console.error('Error saving chat sessions to localStorage:', error);
       }
     }
-  }, [chatMessages, isClient]);
+  }, [chatSessions, isClient]);
 
   // Prevent hydration mismatch by not rendering until client-side
   if (!isClient || status === "loading") {
@@ -114,8 +215,8 @@ export default function ShftrrDashboard() {
   }
 
   const handleNewChat = () => {
-    // Clear all chat messages and reset state
-    setChatMessages([]);
+    // Create a new chat session
+    createNewChat();
     setVentText('');
     setInputValue('');
     setShowTyping(false);
@@ -128,14 +229,14 @@ export default function ShftrrDashboard() {
     if (e.key === 'Enter' && inputValue.trim() && !isLoading) {
       const userInput = inputValue.trim();
 
-      // Add user message to chat
+      // Add user message to current chat
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
         text: userInput,
         isUser: true,
         timestamp: new Date(),
       };
-      setChatMessages(prev => [...prev, userMessage]);
+      updateCurrentChatMessages([...chatMessages, userMessage]);
       setVentText(userInput);
 
       // Prepare conversation history for Gemini
@@ -172,20 +273,19 @@ export default function ShftrrDashboard() {
         isUser: false,
         timestamp: new Date(),
       };
-      setChatMessages(prev => [...prev, aiMessage]);
+      updateCurrentChatMessages([...chatMessages, aiMessage]);
 
       // Send request and handle response
       sendMessage(
         chatRequest,
         (chunk) => {
           // Update AI message with response
-          setChatMessages(prev =>
-            prev.map(msg =>
-              msg.id === aiMessageId
-                ? { ...msg, text: chunk }
-                : msg
-            )
+          const updatedMessages = chatMessages.map(msg =>
+            msg.id === aiMessageId
+              ? { ...msg, text: chunk }
+              : msg
           );
+          updateCurrentChatMessages(updatedMessages);
         },
         (fullResponse: GeminiChatResponse) => {
           setShowTyping(false);
@@ -206,13 +306,12 @@ export default function ShftrrDashboard() {
             }
           }
 
-          setChatMessages(prev =>
-            prev.map(msg =>
-              msg.id === aiMessageId
-                ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
-                : msg
-            )
+          const finalMessages = chatMessages.map(msg =>
+            msg.id === aiMessageId
+              ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
+              : msg
           );
+          updateCurrentChatMessages(finalMessages);
 
           // Response processed successfully
 
@@ -248,8 +347,8 @@ export default function ShftrrDashboard() {
       <div className="flex flex-1">
         {/* Left Sidebar - 250px width, dark theme */}
         <aside className="w-[250px] bg-black text-white flex flex-col border-r border-gray-600" aria-label="Chat navigation">
-          {/* Header */}
-          <div className="p-6 border-b border-gray-600 mb-4">
+          {/* Header - New Chat Button */}
+          <div className="p-6 border-b border-gray-600">
             <button
               onClick={handleNewChat}
               className={`flex items-center gap-3 w-full text-left focus:outline-none rounded-lg p-2 -m-2 ${buttonHover}`}
@@ -262,43 +361,109 @@ export default function ShftrrDashboard() {
             </button>
           </div>
 
-          {/* User Info */}
-          {session?.user && (
-            <div className="px-6 mb-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-900 border border-gray-700">
-                {session.user.image ? (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name || "User"}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                    <User className="w-4 h-4" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {session.user.name}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {session.user.email}
-                  </p>
+          {/* Chat History - Takes up available space */}
+          <nav className="flex-1 overflow-y-auto p-4" aria-label="Chat history">
+            <div className="space-y-1">
+              {chatSessions.map((session) => (
+                <div key={session.id} className="relative group">
+                  <button
+                    onClick={() => switchToChat(session.id)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors duration-200 ${
+                      session.id === currentChatId
+                        ? 'bg-gray-700 text-white'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 opacity-60" />
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate font-normal">
+                          {session.title}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {session.messages.length > 0 ? `${session.messages.length} messages` : 'Empty chat'}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Delete button - appears on hover */}
+                  {chatSessions.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteChat(session.id);
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 w-6 h-6 rounded hover:bg-red-600 flex items-center justify-center transition-opacity"
+                      aria-label="Delete chat"
+                    >
+                      <span className="text-xs text-gray-400 hover:text-white">×</span>
+                    </button>
+                  )}
                 </div>
-              </div>
-
-              <button
-                onClick={() => signOut()}
-                className={`flex items-center gap-2 w-full mt-3 px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
-              >
-                <LogOut className="w-4 h-4" />
-                Sign out
-              </button>
+              ))}
             </div>
-          )}
+          </nav>
 
-          {!session && (
-            <div className="px-6 mb-4">
+          {/* User Info and Actions - Fixed at bottom */}
+          <div className="border-t border-gray-600 p-4">
+            {/* Test User Button */}
+            <button
+              onClick={async () => {
+                try {
+                  await signIn('credentials', {
+                    email: 'test@example.com',
+                    password: 'password123',
+                    redirect: false,
+                  });
+                  success('Signed in as test user', 'Welcome back!');
+                } catch (error) {
+                  showError('Sign in failed', 'Could not sign in as test user');
+                }
+              }}
+              className={`flex items-center gap-2 w-full mb-3 px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
+            >
+              <User className="w-4 h-4" />
+              Test User
+            </button>
+
+            {session?.user && (
+              <>
+                {/* User Profile */}
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-900 border border-gray-700 mb-3">
+                  {session.user.image ? (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || "User"}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                      <User className="w-4 h-4" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {session.user.name}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {session.user.email}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Sign Out Button */}
+                <button
+                  onClick={() => signOut()}
+                  className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-200 ${buttonHover}`}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </button>
+              </>
+            )}
+
+            {!session && (
               <a
                 href="/auth/signin"
                 className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-blue-400 hover:text-blue-300 hover:bg-gray-800 rounded-lg transition-colors duration-200"
@@ -306,13 +471,8 @@ export default function ShftrrDashboard() {
                 <User className="w-4 h-4" />
                 Sign in
               </a>
-            </div>
-          )}
-
-          {/* Chat History - Empty for now */}
-          <nav className="flex-1 overflow-y-auto p-4" aria-label="Chat history">
-            {/* Chat list would go here */}
-          </nav>
+            )}
+          </div>
         </aside>
 
         {/* Main Center Content */}
