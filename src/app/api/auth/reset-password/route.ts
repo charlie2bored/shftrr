@@ -14,13 +14,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate the reset token
-    const emailFromToken = validatePasswordResetToken(token);
+    const emailFromToken = await validatePasswordResetToken(token);
     if (!emailFromToken) {
       return NextResponse.json({ error: 'Invalid or expired reset token' }, { status: 400 });
     }
 
     // Update the user's password
-    const success = updateUserPassword(emailFromToken, newPassword);
+    const success = await updateUserPassword(emailFromToken, newPassword);
     if (!success) {
       return NextResponse.json({ error: 'Failed to update password' }, { status: 500 });
     }

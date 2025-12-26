@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists (but don't reveal this information for security)
-    const user = findUserByEmail(email);
+    const user = await findUserByEmail(email);
     if (!user) {
       // Return success message anyway to prevent email enumeration
       return NextResponse.json({
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate reset token
-    const resetToken = generatePasswordResetToken(email);
+    const resetToken = await generatePasswordResetToken(email);
 
     // Create reset URL
     const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;

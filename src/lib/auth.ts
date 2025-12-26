@@ -5,11 +5,24 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
 import { z } from 'zod';
 
+// Extend NextAuth types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
+
 // Validation schemas
 export const userSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters").max(100, "Password must be less than 100 characters"),
+  image: z.string().optional(),
 });
 
 export const loginSchema = z.object({
@@ -90,7 +103,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token?.id) {
+      if (token?.id && session.user) {
         session.user.id = token.id as string;
       }
       return session;
@@ -98,6 +111,9 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       try {
         if (account?.provider === 'google' && profile?.email) {
+          // Dynamic import to avoid build-time issues
+          const { prisma } = await import('./prisma');
+
           // Check if user exists
           const existingUser = await prisma.user.findUnique({
             where: { email: profile.email }
@@ -134,6 +150,9 @@ export async function createUser(userData: { name: string; email: string; passwo
     // Hash password
     const hashedPassword = await bcrypt.hash(validatedData.password, 12);
 
+    // Dynamic import to avoid build-time issues
+    const { prisma } = await import('./prisma');
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: validatedData.email }
@@ -165,6 +184,7 @@ export async function createUser(userData: { name: string; email: string; passwo
 // Helper function to find user by email
 export async function findUserByEmail(email: string) {
   try {
+    const { prisma } = await import('./prisma');
     return await prisma.user.findUnique({
       where: { email }
     });
@@ -177,6 +197,8 @@ export async function findUserByEmail(email: string) {
 // Password reset helper functions
 export async function generatePasswordResetToken(email: string): Promise<string> {
   try {
+    const { prisma } = await import('./prisma');
+
     // Generate a secure random token
     const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -204,6 +226,8 @@ export async function generatePasswordResetToken(email: string): Promise<string>
 
 export async function validatePasswordResetToken(token: string): Promise<string | null> {
   try {
+    const { prisma } = await import('./prisma');
+
     const tokenData = await prisma.passwordResetToken.findUnique({
       where: { token }
     });
@@ -229,6 +253,8 @@ export async function validatePasswordResetToken(token: string): Promise<string 
 
 export async function updateUserPassword(email: string, newPassword: string): Promise<boolean> {
   try {
+    const { prisma } = await import('./prisma');
+
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     const result = await prisma.user.updateMany({
