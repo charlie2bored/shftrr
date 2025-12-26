@@ -1,48 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addUser, findUserByEmail } from "@/lib/auth";
+import { createUser } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
     const { name, email, password } = await request.json();
     console.log("📝 Signup attempt:", { name, email });
 
-    // Validate input
-    if (!name || !email || !password) {
-      console.log("❌ Missing required fields");
-      return NextResponse.json(
-        { error: "Name, email, and password are required" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      console.log("❌ Password too short");
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters long" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already exists
-    const existingUser = findUserByEmail(email);
-    if (existingUser) {
-      console.log("❌ User already exists:", email);
-      return NextResponse.json(
-        { error: "User with this email already exists" },
-        { status: 400 }
-      );
-    }
-
-    // Create user (simple storage - replace with database later)
-    const user = {
-      id: Date.now().toString(),
+    // Create user with validation and password hashing
+    const user = await createUser({
       name,
       email,
-      password, // In production, hash this!
-      createdAt: new Date().toISOString(),
-    };
+      password,
+    });
 
-    addUser(user);
     console.log("✅ User created successfully");
 
     return NextResponse.json({
@@ -55,8 +25,24 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Signup error:", error);
+
+    // Handle specific validation errors
+    if (error.message.includes("already exists")) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
+    if (error.message.includes("must be")) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

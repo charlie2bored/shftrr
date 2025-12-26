@@ -75,3 +75,5 @@ console.log('📧 For Google OAuth setup, see: setup-auth.md');
 
 console.log('\n✨ Authentication should now work!');
 
+
+
