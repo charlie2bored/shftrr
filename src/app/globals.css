@@ -43,43 +43,62 @@
     overflow: hidden;
   }
 
-  /* Clean prose styling for shftrr. chat */
-  .prose {
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 400;
+  /* Clean prose styling for shftrr. chat - Override prose-invert defaults */
+  .prose,
+  .prose-invert {
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
     letter-spacing: 0.01em;
   }
 
-  .prose p {
+  .prose p,
+  .prose-invert p {
     margin-bottom: 1.5rem;
     line-height: 1.7;
+    font-size: 14px !important;
+    font-weight: 400 !important;
   }
 
-  .prose h1 {
-    font-size: 1.5rem;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+  .prose strong,
+  .prose-invert strong {
+    font-weight: 600 !important;
   }
 
-  .prose h2 {
-    font-size: 1.25rem;
-    margin-top: 1.75rem;
+  .prose h1,
+  .prose-invert h1 {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    margin-top: 1.5rem;
     margin-bottom: 0.75rem;
   }
 
-  .prose h3 {
-    font-size: 1.1rem;
-    margin-top: 1.5rem;
+  .prose h2,
+  .prose-invert h2 {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin-top: 1.25rem;
     margin-bottom: 0.5rem;
   }
 
-  .prose ul, .prose ol {
+  .prose h3,
+  .prose-invert h3 {
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prose ul, .prose ol,
+  .prose-invert ul, .prose-invert ol {
     margin-bottom: 1.25rem;
     margin-top: 0.75rem;
   }
 
-  .prose li {
+  .prose li,
+  .prose-invert li {
     margin-bottom: 0.5rem;
+    font-size: 14px !important;
+    font-weight: 400 !important;
   }
 }
