@@ -110,6 +110,19 @@ export const paginatedResponseSchema = <T extends z.ZodType>(itemSchema: T) => z
   hasPrev: z.boolean(),
 });
 
+// Onboarding Schema
+export const onboardingSchema = z.object({
+  yearsExperience: z.number().min(0).max(50).optional(),
+  industry: z.string().min(1).max(100).optional(),
+  currentRole: z.string().min(1).max(100).optional(),
+  biggestStressor: z.string().min(1).max(200).optional(),
+  topConstraint: z.string().min(1).max(200).optional(),
+  careerGoals: z.string().min(1).max(1000).optional(),
+  preferredWorkStyle: z.string().min(1).max(100).optional(),
+  skillLevel: z.string().min(1).max(50).optional(),
+  learningStyle: z.string().min(1).max(100).optional(),
+});
+
 // Settings and Preferences Schemas
 export const userSettingsSchema = z.object({
   theme: z.enum(['light', 'dark', 'auto']).default('dark'),
@@ -176,6 +189,7 @@ export const fileUploadSchema = z.object({
 
 // Export commonly used schemas
 export const schemas = {
+  onboarding: onboardingSchema,
   user: {
     register: userRegistrationSchema,
     login: userLoginSchema,

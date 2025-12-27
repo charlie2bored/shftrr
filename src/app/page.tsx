@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, LogOut, User, MessageSquare, Settings } from 'lucide-react';
 import { useSession, signOut, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useGeminiChat, type GeminiChatRequest, type GeminiChatResponse } from '@/lib/use-gemini-chat';
 import { TypingIndicator, SkeletonMessage } from '@/components/Skeleton';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
@@ -46,6 +47,8 @@ export default function ShftrrDashboard() {
   const [showTyping, setShowTyping] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const router = useRouter();
 
   // Get current chat session
   const currentChat = chatSessions.find(session => session.id === currentChatId);
@@ -217,6 +220,43 @@ export default function ShftrrDashboard() {
               Create Account
             </a>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check onboarding status for authenticated users
+  useEffect(() => {
+    if (session?.user && isClient) {
+      checkOnboardingStatus();
+    }
+  }, [session, isClient]);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const response = await fetch('/api/onboarding');
+      const data = await response.json();
+
+      setOnboardingCompleted(data.completed || false);
+
+      // Redirect to onboarding if not completed
+      if (!data.completed) {
+        router.push('/onboarding');
+      }
+    } catch (error) {
+      console.error('Failed to check onboarding status:', error);
+      // Default to completed to avoid blocking the user
+      setOnboardingCompleted(true);
+    }
+  };
+
+  // Show loading while checking onboarding status
+  if (session && onboardingCompleted === null) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-8 w-8 text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-400">Setting up your personalized experience...</p>
         </div>
       </div>
     );

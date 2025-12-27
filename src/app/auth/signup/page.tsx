@@ -53,8 +53,8 @@ export default function SignUp() {
         throw new Error(data.error || "Failed to create account");
       }
 
-      success("Account created!", "Please sign in with your new account");
-      router.push("/auth/signin");
+      success("Account created!", "Let's set up your personalized experience");
+      router.push("/onboarding");
     } catch (error: any) {
       showError("Sign up failed", error.message);
     } finally {
