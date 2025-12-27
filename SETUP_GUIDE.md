@@ -8,7 +8,7 @@ Your Google AI API key has been exposed in the repository. Google has detected t
 
 #### 1. **Revoke the Compromised Key**
 1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Find the key: `AIzaSyD5gW8bKlXLoS6FV6os6HGmD6dq17HZYHM`
+2. Find your API key in the Google AI Studio dashboard
 3. **DELETE** it immediately
 4. **CREATE** a new API key
 5. **COPY** the new key securely
