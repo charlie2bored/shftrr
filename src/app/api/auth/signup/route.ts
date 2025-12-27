@@ -39,8 +39,10 @@ async function signupHandler(request: NextRequest) {
       response.headers.set(key, value);
     });
 
-    Object.entries(getCorsHeaders(request.headers.get('origin') || undefined)).forEach(([key, value]) => {
-      response.headers.set(key, value);
+    Object.entries(getCorsHeaders(request.headers.get('origin') ?? undefined)).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        response.headers.set(key, value);
+      }
     });
 
     return response;

@@ -37,7 +37,7 @@ export class UserService {
   /**
    * Find user by ID with minimal data selection
    */
-  static async findById(id: string): Promise<User | null> {
+  static async findById(id: string): Promise<Pick<User, 'id' | 'email' | 'name' | 'image' | 'provider' | 'createdAt' | 'updatedAt'> | null> {
     try {
       return await prisma.user.findUnique({
         where: { id },
@@ -66,7 +66,7 @@ export class UserService {
     password?: string;
     image?: string;
     provider?: string;
-  }): Promise<User> {
+  }): Promise<Pick<User, 'id' | 'email' | 'name' | 'image' | 'provider' | 'createdAt' | 'updatedAt'>> {
     try {
       return await prisma.user.create({
         data: {

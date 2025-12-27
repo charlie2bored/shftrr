@@ -103,14 +103,14 @@ export function checkRateLimit(
 /**
  * Rate limiting middleware for API routes
  */
-export function withRateLimit(
-  handler: (request: Request, ...args: any[]) => Promise<Response>,
+export function withRateLimit<T extends Request>(
+  handler: (request: T, ...args: any[]) => Promise<Response>,
   options: RateLimitOptions = {
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 100, // 100 requests per 15 minutes
   }
 ) {
-  return async (request: Request, ...args: any[]): Promise<Response> => {
+  return async (request: T, ...args: any[]): Promise<Response> => {
     const key = getRateLimitKey(request);
 
     // Periodic cleanup (every 100 requests)

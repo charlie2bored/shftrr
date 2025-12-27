@@ -2,10 +2,10 @@
 
 import { Suspense, lazy } from 'react';
 import { SkeletonText } from './Skeleton';
+import remarkGfm from 'remark-gfm';
 
-// Lazy load ReactMarkdown and plugins for better bundle splitting
+// Lazy load ReactMarkdown for better bundle splitting
 const ReactMarkdown = lazy(() => import('react-markdown'));
-const remarkGfm = lazy(() => import('remark-gfm'));
 
 interface MarkdownRendererProps {
   content: string;
@@ -15,10 +15,10 @@ interface MarkdownRendererProps {
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
   return (
     <Suspense fallback={<SkeletonText lines={3} />}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        className={className}
-        components={{
+      <div className={className}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
           h1: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
           h2: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
           h3: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
@@ -34,9 +34,10 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             </div>
           ),
         }}
-      >
+        >
         {content}
       </ReactMarkdown>
+      </div>
     </Suspense>
   );
 }
