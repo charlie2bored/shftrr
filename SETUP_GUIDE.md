@@ -59,23 +59,27 @@ NEXTAUTH_SECRET=generate-a-32-character-random-string
 NEXTAUTH_URL=http://localhost:3000
 ```
 
-### 4. Initialize Database
+### 4. Set Up Database Manually
+
+**Since CLI connectivity is having issues, we'll set up the database manually:**
+
+1. **Go to Supabase SQL Editor**: https://hjopsthrkbbbsyckwtil.supabase.co/project/default/sql
+
+2. **Run the table creation script**: Copy and paste the contents of `database-setup.sql`
+
+3. **Run the seed data script**: Copy and paste the contents of `seed-data.sql`
+
+### 5. Generate Prisma Client
 ```bash
-# Push schema to Supabase
-npx prisma db push
-
-# Generate client
+# Generate Prisma client (local only)
 npx prisma generate
-
-# Create test user
-npx prisma db seed
 ```
 
-### 5. Enable Security (Recommended)
+### 6. Enable Security (Already Included)
 1. Supabase Dashboard → SQL Editor
 2. Run contents of `supabase-rls.sql`
 
-### 6. Launch Application
+### 7. Launch Application
 ```bash
 npm run dev
 ```
