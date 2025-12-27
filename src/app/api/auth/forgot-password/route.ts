@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generatePasswordResetToken, findUserByEmail } from "@/lib/auth";
+import { env } from "@/lib/env";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     const resetToken = await generatePasswordResetToken(email);
 
     // Create reset URL
-    const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`;
 
     // In development, log the reset link. In production, send email
     console.log('🔐 Password Reset Link Generated');

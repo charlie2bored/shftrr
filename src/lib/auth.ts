@@ -2,8 +2,9 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from 'bcryptjs';
-import { prisma } from './prisma';
-import { z } from 'zod';
+import { env } from './env';
+import { schemas } from './validations';
+import { UserService, PasswordResetService } from './db';
 
 // Extend NextAuth types
 declare module "next-auth" {
@@ -17,25 +18,16 @@ declare module "next-auth" {
   }
 }
 
-// Validation schemas
-export const userSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters").max(100, "Password must be less than 100 characters"),
-  image: z.string().optional(),
-});
-
-export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+// Re-export validation schemas for backward compatibility
+export const userSchema = schemas.user.register;
+export const loginSchema = schemas.user.login;
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: env.GOOGLE_CLIENT_ID || "",
+      clientSecret: env.GOOGLE_CLIENT_SECRET || "",
     }),
     CredentialsProvider({
       id: "credentials",
@@ -52,9 +44,7 @@ export const authOptions: NextAuthOptions = {
           const validatedCredentials = loginSchema.parse(credentials);
 
           // Find user in database
-          const user = await prisma.user.findUnique({
-            where: { email: validatedCredentials.email }
-          });
+          const user = await UserService.findByEmail(validatedCredentials.email);
 
           if (!user) {
             console.log("❌ User not found");
@@ -115,19 +105,15 @@ export const authOptions: NextAuthOptions = {
           const { prisma } = await import('./prisma');
 
           // Check if user exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: profile.email }
-          });
+          const existingUser = await UserService.findByEmail(profile.email);
 
           if (!existingUser) {
             // Create new user for Google OAuth
-            await prisma.user.create({
-              data: {
-                email: profile.email,
-                name: profile.name || null,
-                image: profile.image || null,
-                provider: 'google',
-              }
+            await UserService.create({
+              email: profile.email,
+              name: profile.name || undefined,
+              image: profile.image || undefined,
+              provider: 'google',
             });
             console.log("✅ Created new Google OAuth user:", profile.email);
           }
@@ -147,30 +133,22 @@ export async function createUser(userData: { name: string; email: string; passwo
     // Validate user data
     const validatedData = userSchema.parse(userData);
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(validatedData.password, 12);
-
-    // Dynamic import to avoid build-time issues
-    const { prisma } = await import('./prisma');
-
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email }
-    });
-
+    const existingUser = await UserService.exists(validatedData.email);
     if (existingUser) {
       throw new Error("User with this email already exists");
     }
 
+    // Hash password
+    const hashedPassword = await bcrypt.hash(validatedData.password, 12);
+
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        email: validatedData.email,
-        name: validatedData.name,
-        password: hashedPassword,
-        image: validatedData.image,
-        provider: 'credentials',
-      }
+    const user = await UserService.create({
+      email: validatedData.email,
+      name: validatedData.name,
+      password: hashedPassword,
+      image: validatedData.image,
+      provider: 'credentials',
     });
 
     console.log("👤 Created user:", { id: user.id, email: user.email, name: user.name });
@@ -184,10 +162,7 @@ export async function createUser(userData: { name: string; email: string; passwo
 // Helper function to find user by email
 export async function findUserByEmail(email: string) {
   try {
-    const { prisma } = await import('./prisma');
-    return await prisma.user.findUnique({
-      where: { email }
-    });
+    return await UserService.findByEmail(email);
   } catch (error) {
     console.error("❌ Error finding user:", error);
     return null;
@@ -197,24 +172,15 @@ export async function findUserByEmail(email: string) {
 // Password reset helper functions
 export async function generatePasswordResetToken(email: string): Promise<string> {
   try {
-    const { prisma } = await import('./prisma');
-
     // Generate a secure random token
     const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Clean up expired tokens first
-    await prisma.passwordResetToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } }
-    });
-
-    // Create new token
-    await prisma.passwordResetToken.create({
-      data: {
-        token,
-        email,
-        expiresAt,
-      }
+    // Create new token (cleanup happens automatically in the service)
+    await PasswordResetService.create({
+      token,
+      email,
+      expiresAt,
     });
 
     return token;
@@ -226,25 +192,7 @@ export async function generatePasswordResetToken(email: string): Promise<string>
 
 export async function validatePasswordResetToken(token: string): Promise<string | null> {
   try {
-    const { prisma } = await import('./prisma');
-
-    const tokenData = await prisma.passwordResetToken.findUnique({
-      where: { token }
-    });
-
-    if (!tokenData) {
-      return null;
-    }
-
-    if (tokenData.expiresAt < new Date()) {
-      // Delete expired token
-      await prisma.passwordResetToken.delete({
-        where: { token }
-      });
-      return null;
-    }
-
-    return tokenData.email;
+    return await PasswordResetService.validateToken(token);
   } catch (error) {
     console.error("❌ Error validating reset token:", error);
     return null;
@@ -253,16 +201,8 @@ export async function validatePasswordResetToken(token: string): Promise<string 
 
 export async function updateUserPassword(email: string, newPassword: string): Promise<boolean> {
   try {
-    const { prisma } = await import('./prisma');
-
     const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-    const result = await prisma.user.updateMany({
-      where: { email },
-      data: { password: hashedPassword }
-    });
-
-    return result.count > 0;
+    return await UserService.updatePassword(email, hashedPassword);
   } catch (error) {
     console.error("❌ Error updating password:", error);
     return false;

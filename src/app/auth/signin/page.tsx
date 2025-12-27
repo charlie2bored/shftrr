@@ -5,9 +5,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
+import type { Metadata } from "next";
 
 // Force dynamic rendering to prevent prerendering issues
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to your Career Pivot Coach account to continue your personalized career journey.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function SignIn() {
   const [providers, setProviders] = useState<any>(null);

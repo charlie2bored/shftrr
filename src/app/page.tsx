@@ -1,126 +1,22 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Plus, LogOut, User, MessageSquare, Settings } from 'lucide-react';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { useGeminiChat, type GeminiChatRequest, type GeminiChatResponse } from '@/lib/use-gemini-chat';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { TypingIndicator } from '@/components/Skeleton';
+import { TypingIndicator, SkeletonMessage } from '@/components/Skeleton';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { SuspenseWrapper } from '@/components/SuspenseWrapper';
+import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { useToast } from '@/lib/toast-context';
 import { buttonHover, inputFocus, cardHover, fadeInUp } from '@/lib/animations';
+import dynamic from 'next/dynamic';
 
-// Settings Modal Component
-function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [theme, setTheme] = useState('dark');
-  const [notifications, setNotifications] = useState(true);
-  const [autoSave, setAutoSave] = useState(true);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Account Settings</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          {/* Theme Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Theme
-            </label>
-            <select
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-            >
-              <option value="dark">Dark</option>
-              <option value="light">Light (Coming Soon)</option>
-              <option value="auto">Auto (Coming Soon)</option>
-            </select>
-          </div>
-
-          {/* Notifications */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-300">Notifications</h3>
-              <p className="text-xs text-gray-500">Receive updates about your career journey</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications}
-                onChange={(e) => setNotifications(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          {/* Auto Save */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-300">Auto Save</h3>
-              <p className="text-xs text-gray-500">Automatically save conversations</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoSave}
-                onChange={(e) => setAutoSave(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          {/* Account Actions */}
-          <div className="border-t border-gray-700 pt-4">
-            <h3 className="text-sm font-medium text-gray-300 mb-3">Account</h3>
-            <div className="space-y-2">
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-                Export Data
-              </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-                Privacy Settings
-              </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition-colors">
-                Delete Account
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 text-sm text-gray-300 hover:text-white border border-gray-600 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              // Save settings logic would go here
-              onClose();
-            }}
-            className="flex-1 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// Dynamic import for SettingsModal to reduce bundle size
+const SettingsModal = dynamic(() => import('./components/SettingsModal'), {
+  loading: () => null, // No loading state needed for modal
+});
 
 interface ChatMessage {
   id: string;
@@ -557,9 +453,11 @@ export default function ShftrrDashboard() {
                 {/* User Profile */}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-900 border border-gray-700 mb-3">
                 {session.user.image ? (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt={session.user.name || "User"}
+                    width={32}
+                    height={32}
                     className="w-8 h-8 rounded-full"
                   />
                 ) : (
@@ -621,50 +519,40 @@ export default function ShftrrDashboard() {
 
             {/* Chat History */}
             {chatMessages.length > 0 && (
-              <div className="flex-1 overflow-y-auto space-y-12 py-8">
-                {chatMessages.map((message, index) => (
-                  <div key={message.id} className={`${fadeInUp} flex flex-col ${message.isUser ? 'items-end' : 'items-start'}`}>
-                    <div className={`p-6 rounded-2xl transition-all duration-200 ${
-                      message.isUser
-                        ? 'bg-blue-600/20 border border-blue-500/30 max-w-[80%] ml-auto text-white'
-                        : 'bg-gray-900/50 border border-gray-800 max-w-[90%] mr-auto'
-                    }`}>
-                      {message.isUser ? (
-                        <p className="text-white text-[14px] font-normal leading-relaxed">{message.text}</p>
-                      ) : (
-                        <div className="shftrr-response max-w-none">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              h1: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
-                              h2: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
-                              h3: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
-                              p: ({ children }) => <p className="text-[14px] font-normal text-white leading-relaxed mb-5">{children}</p>,
-                              ul: ({ children }) => <ul className="text-white mb-4 space-y-2 ml-6 list-disc">{children}</ul>,
-                              ol: ({ children }) => <ol className="text-white mb-4 space-y-2 ml-6 list-decimal">{children}</ol>,
-                              li: ({ children }) => <li className="text-[14px] font-normal leading-relaxed mb-2">{children}</li>,
-                              strong: ({ children }) => <span className="text-white font-normal">{children}</span>,
-                              em: ({ children }) => <em className="text-white italic">{children}</em>,
-                              blockquote: ({ children }) => (
-                                <div className="border-l-4 border-blue-500 pl-6 my-6 text-white italic bg-slate-800/30 py-4 px-6 rounded-r-lg">
-                                  {children}
-                                </div>
-                              ),
-                            }}
-                          >
-                            {message.text}
-                          </ReactMarkdown>
-                        </div>
-                      )}
+              <SuspenseWrapper
+                fallback={
+                  <div className="flex-1 overflow-y-auto space-y-12 py-8">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <SkeletonMessage key={i} isUser={i % 2 === 0} />
+                    ))}
+                  </div>
+                }
+              >
+                <div className="flex-1 overflow-y-auto space-y-12 py-8">
+                  {chatMessages.map((message, index) => (
+                    <div key={message.id} className={`${fadeInUp} flex flex-col ${message.isUser ? 'items-end' : 'items-start'}`}>
+                      <div className={`p-6 rounded-2xl transition-all duration-200 ${
+                        message.isUser
+                          ? 'bg-blue-600/20 border border-blue-500/30 max-w-[80%] ml-auto text-white'
+                          : 'bg-gray-900/50 border border-gray-800 max-w-[90%] mr-auto'
+                      }`}>
+                        {message.isUser ? (
+                          <p className="text-white text-[14px] font-normal leading-relaxed">{message.text}</p>
+                        ) : (
+                          <div className="shftrr-response max-w-none">
+                            <MarkdownRenderer content={message.text} />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {showTyping && (
-                  <div className="flex items-start">
-                    <TypingIndicator />
-                  </div>
-                )}
-              </div>
+                  ))}
+                  {showTyping && (
+                    <div className="flex items-start">
+                      <TypingIndicator />
+                    </div>
+                  )}
+                </div>
+              </SuspenseWrapper>
             )}
 
             {/* Input Field Area */}
@@ -683,7 +571,14 @@ export default function ShftrrDashboard() {
                   disabled={isLoading}
                   className={`w-full px-6 py-4 text-base rounded-xl border border-gray-700 bg-gray-900/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 ${inputFocus}`}
                   aria-label="Start your conversation"
+                  aria-describedby="input-help"
+                  aria-invalid={error ? "true" : "false"}
+                  role="textbox"
+                  aria-multiline="false"
                 />
+                <div id="input-help" className="sr-only">
+                  Press Enter to send your message to the AI career coach
+                </div>
                 {error && (
                   <div className="mt-4 p-3 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-sm">
                     {error}

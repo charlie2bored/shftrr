@@ -1,6 +1,13 @@
-import type { NextConfig } from "next";
+/**
+ * Next.js configuration with bundle analyzer for development
+ * Run with: ANALYZE=true npm run build
+ */
 
-const nextConfig: NextConfig = {
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+const nextConfig = {
   images: {
     remotePatterns: [
       {
@@ -42,4 +49,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = withBundleAnalyzer(nextConfig);

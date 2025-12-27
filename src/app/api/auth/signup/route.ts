@@ -1,21 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUser } from "@/lib/auth";
+import { schemas } from "@/lib/validations";
+import { withRateLimit, rateLimitConfigs } from "@/lib/rate-limit";
+import { sanitizeRequestBody, getSecurityHeaders, getCorsHeaders } from "@/lib/sanitization";
 
-export async function POST(request: NextRequest) {
+async function signupHandler(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
-    console.log("📝 Signup attempt:", { name, email });
+    const body = await request.json();
+
+    // Sanitize input data
+    const sanitizedBody = sanitizeRequestBody(body);
+
+    // Validate input data
+    const validatedData = schemas.user.register.parse(sanitizedBody);
+    console.log("📝 Signup attempt:", { name: validatedData.name, email: validatedData.email });
 
     // Create user with validation and password hashing
     const user = await createUser({
-      name,
-      email,
-      password,
+      name: validatedData.name,
+      email: validatedData.email,
+      password: validatedData.password,
     });
 
     console.log("✅ User created successfully");
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: "User created successfully",
       user: {
         id: user.id,
@@ -25,27 +34,48 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Add security headers
+    Object.entries(getSecurityHeaders()).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    Object.entries(getCorsHeaders(request.headers.get('origin') || undefined)).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
+
   } catch (error: any) {
     console.error("Signup error:", error);
 
+    let statusCode = 500;
+    let errorMessage = "Internal server error";
+
     // Handle specific validation errors
     if (error.message.includes("already exists")) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      statusCode = 409; // Conflict
+      errorMessage = "A user with this email already exists";
+    } else if (error.message.includes("must be")) {
+      statusCode = 400; // Bad Request
+      errorMessage = error.message;
+    } else if (error.message.includes("Suspicious input detected")) {
+      statusCode = 400;
+      errorMessage = "Invalid input data";
     }
 
-    if (error.message.includes("must be")) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+    const response = NextResponse.json(
+      { error: errorMessage },
+      { status: statusCode }
     );
+
+    // Add security headers even for error responses
+    Object.entries(getSecurityHeaders()).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   }
 }
+
+// Apply rate limiting to the signup handler
+export const POST = withRateLimit(signupHandler, rateLimitConfigs.auth);

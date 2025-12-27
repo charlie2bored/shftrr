@@ -20,6 +20,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Indexes for better query performance
+  @@index([email]) // Already covered by unique, but explicit index
+  @@index([provider]) // For filtering by auth provider
+  @@index([createdAt]) // For sorting/filtering by creation date
+  @@index([updatedAt]) // For sorting by last activity
+
   @@map("users")
 }
 
@@ -29,6 +35,12 @@ model PasswordResetToken {
   email     String
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  // Indexes for better query performance
+  @@index([token]) // Already covered by unique, but explicit index
+  @@index([email]) // For finding tokens by email
+  @@index([expiresAt]) // For cleanup queries
+  @@index([createdAt]) // For sorting tokens
 
   @@map("password_reset_tokens")
 }
