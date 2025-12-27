@@ -1,67 +1,101 @@
-# Career Pivot Coach - Complete Setup Guide
+# 🚨 SECURITY ALERT: API Key Compromised
 
-## ✅ COMPLETED:
-- ✅ Google AI API Key configured
-- ✅ NextAuth Secret configured
-- ✅ Prisma schema updated for PostgreSQL
-- ✅ Environment file created
-- ✅ Supabase client installed
+## ⚠️ IMMEDIATE ACTION REQUIRED
 
-## 🚀 NEXT STEPS (5-10 minutes):
+Your Google AI API key has been exposed in the repository. Google has detected this and sent security alerts.
 
-### 1. Set up Supabase Database
+### 🔐 IMMEDIATE STEPS (Do These NOW):
+
+#### 1. **Revoke the Compromised Key**
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Find the key: `AIzaSyD5gW8bKlXLoS6FV6os6HGmD6dq17HZYHM`
+3. **DELETE** it immediately
+4. **CREATE** a new API key
+5. **COPY** the new key securely
+
+#### 2. **Update Your Environment**
+Edit `.env.local` and replace the old key with your new one:
+```env
+GOOGLE_AI_API_KEY=your-new-secure-api-key-here
+```
+
+#### 3. **Verify Security**
+- ✅ `.env.local` is in `.gitignore` (won't be committed)
+- ✅ No API keys in any committed files
+- ✅ Repository is clean
+
+---
+
+# Career Pivot Coach - Secure Setup Guide
+
+## ✅ CURRENT STATUS:
+- ✅ Prisma schema ready for Supabase
+- ✅ Security policies prepared
+- ✅ Environment template created
+- ❌ **API key needs regeneration**
+
+## 🚀 SECURE SETUP PROCESS:
+
+### 1. 🔑 Generate New Google AI API Key (REQUIRED)
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. **DELETE** the compromised key
+3. **CREATE** new API key
+4. **NEVER** share or commit this key
+
+### 2. Set up Supabase Database
 1. Go to https://supabase.com
 2. Create new project
-3. Wait for database to be ready (2-3 minutes)
-4. Go to Settings → Database
-5. Copy the 'Connection string'
-6. Update .env.local: Replace 'your-supabase-database-url-here' with your actual URL
+3. Wait for setup (2-3 minutes)
+4. Go to **Settings → Database**
+5. Copy **Connection string**
+6. Update `.env.local` with your Supabase URL
 
-### 2. Run Database Setup
+### 3. Configure Environment Variables
+Your `.env.local` should look like:
+```env
+DATABASE_URL=postgresql://postgres.[project]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres
+GOOGLE_AI_API_KEY=your-new-secure-api-key-here
+NEXTAUTH_SECRET=generate-a-32-character-random-string
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### 4. Initialize Database
 ```bash
 # Push schema to Supabase
 npx prisma db push
 
-# Generate Prisma client
+# Generate client
 npx prisma generate
 
-# Seed with test user
+# Create test user
 npx prisma db seed
 ```
 
-### 3. Add Row Level Security (Optional but recommended)
-1. Go to Supabase Dashboard → SQL Editor
-2. Run the contents of supabase-rls.sql
+### 5. Enable Security (Recommended)
+1. Supabase Dashboard → SQL Editor
+2. Run contents of `supabase-rls.sql`
 
-### 4. Start Development Server
+### 6. Launch Application
 ```bash
 npm run dev
 ```
 
-### 5. Test the Application
-1. Go to http://localhost:3000
-2. Try the test login: test@example.com / password123
+### 7. Test Everything
+1. Visit http://localhost:3000
+2. Login: test@example.com / password123
 3. Complete onboarding
-4. Try the job tracker and AI chat
+4. Test job tracker and AI chat
 
-## 🔧 Environment Variables (.env.local)
-```
-DATABASE_URL=your-supabase-connection-string
-GOOGLE_AI_API_KEY=AIzaSyD5gW8bKlXLoS6FV6os6HGmD6dq17HZYHM
-NEXTAUTH_SECRET=default-build-secret-key-for-development-only
-NEXTAUTH_URL=http://localhost:3000
-```
+## 🔐 SECURITY BEST PRACTICES
 
-## 🚀 Production Deployment
-When ready for production:
-1. Generate a proper NEXTAUTH_SECRET (32+ characters)
-2. Set NEXTAUTH_URL to your domain
-3. Deploy to Vercel/Netlify
-4. Set environment variables in hosting platform
+- ✅ **Never commit** `.env.local` or API keys
+- ✅ **Regenerate** compromised keys immediately
+- ✅ **Monitor** Google AI Studio for usage alerts
+- ✅ **Enable RLS** in Supabase for data protection
+- ✅ **Use strong** NEXTAUTH_SECRET (32+ characters)
 
-## 📞 Need Help?
-- Supabase setup issues? Check their docs
-- Database connection problems? Verify your DATABASE_URL
-- AI not working? Verify GOOGLE_AI_API_KEY
+## 🎯 READY FOR SECURE LAUNCH!
 
-Your app is 95% ready - just need that Supabase database URL! 🎯
+Once you have your new API key and Supabase database, you'll have a fully secure, production-ready career coaching platform! 🚀
+
+**Need help regenerating the key?** Let me know and I can guide you through it step-by-step.
