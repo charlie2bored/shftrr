@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model User {
@@ -28,12 +28,6 @@ model User {
   userSkills      UserSkill[]
   milestones      CareerMilestone[]
   conversations   Conversation[]
-
-  // Indexes for better query performance
-  @@index([email]) // Already covered by unique, but explicit index
-  @@index([provider]) // For filtering by auth provider
-  @@index([createdAt]) // For sorting/filtering by creation date
-  @@index([updatedAt]) // For sorting by last activity
 
   @@map("users")
 }

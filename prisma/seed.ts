@@ -1,35 +1,46 @@
-import { PrismaClient } from '@prisma/client'
+import Database from 'better-sqlite3'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
+import path from 'path'
 
 async function main() {
   console.log('🌱 Seeding database...')
 
-  // Create test user
-  const hashedPassword = await bcrypt.hash('password123', 12)
+  // Connect to SQLite database
+  const dbPath = path.join(process.cwd(), 'prisma', 'dev.db')
+  const db = new Database(dbPath)
 
-  const testUser = await prisma.user.upsert({
-    where: { email: 'test@example.com' },
-    update: {},
-    create: {
-      email: 'test@example.com',
-      name: 'Test User',
-      password: hashedPassword,
-      provider: 'credentials',
-    },
-  })
+  try {
+    // Create test user
+    const hashedPassword = await bcrypt.hash('password123', 12)
 
-  console.log('✅ Created test user:', testUser.email)
-  console.log('📧 Test login: test@example.com / password123')
+    // Insert test user
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO users (id, email, name, password, provider, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `)
+
+    const userId = 'test-user-id'
+    const now = new Date().toISOString()
+
+    stmt.run(
+      userId,
+      'test@example.com',
+      'Test User',
+      hashedPassword,
+      'credentials',
+      now,
+      now
+    )
+
+    console.log('✅ Created test user: test@example.com')
+    console.log('📧 Test login: test@example.com / password123')
+
+  } finally {
+    db.close()
+  }
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error('❌ Seeding failed:', e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+main().catch((e) => {
+  console.error('❌ Seeding failed:', e)
+  process.exit(1)
+})

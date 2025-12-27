@@ -8,7 +8,15 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
+  generator: {
+    client: {
+      provider: "prisma-client-js",
+    },
+  },
+  seed: {
+    typescript: "npx tsx prisma/seed.ts",
+  },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: "file:./prisma/dev.db",
   },
 });
