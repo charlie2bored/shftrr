@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, LogOut, User, MessageSquare, Settings } from 'lucide-react';
+import { Plus, LogOut, User, MessageSquare, Settings, Briefcase, Target, TrendingUp, Loader2 } from 'lucide-react';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useGeminiChat, type GeminiChatRequest, type GeminiChatResponse } from '@/lib/use-gemini-chat';
@@ -10,6 +10,7 @@ import { TypingIndicator, SkeletonMessage } from '@/components/Skeleton';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { SuspenseWrapper } from '@/components/SuspenseWrapper';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
+import { JobApplicationTracker } from '@/components/job-tracker/JobApplicationTracker';
 import { useToast } from '@/lib/toast-context';
 import { buttonHover, inputFocus, cardHover, fadeInUp } from '@/lib/animations';
 import dynamic from 'next/dynamic';
@@ -48,6 +49,8 @@ export default function ShftrrDashboard() {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const [currentTab, setCurrentTab] = useState<'chat' | 'jobs' | 'goals'>('chat');
+  const tabs = ['chat', 'jobs', 'goals'] as const;
   const router = useRouter();
 
   // Get current chat session
@@ -540,25 +543,52 @@ export default function ShftrrDashboard() {
 
         {/* Main Center Content */}
         <main className="flex-1 bg-black flex flex-col" role="main">
-          {/* Content Area - Changed to left alignment */}
-          <div className="flex-1 flex flex-col px-12 py-8 max-w-4xl mx-auto w-full">
-            {/* Hero Section - Only shown when no messages */}
-            {chatMessages.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center space-y-12">
-                <div className="text-center space-y-6">
-                  <p className="text-white text-2xl font-normal leading-relaxed">welcome to</p>
-                  <h1 className="text-7xl md:text-8xl font-bold leading-tight">
-                    <span className="bg-gradient-to-r from-blue-300 via-cyan-400 to-teal-600 bg-clip-text text-transparent">
-                      shftrr.
-                    </span>
-                  </h1>
-                </div>
-                <div className="w-full max-w-xs h-px bg-gray-600 opacity-30"></div>
-              </div>
-            )}
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-700 px-12">
+            <nav className="flex space-x-8">
+              {[
+                { id: 'chat' as const, label: 'Career Chat', icon: MessageSquare },
+                { id: 'jobs' as const, label: 'Job Tracker', icon: Briefcase },
+                { id: 'goals' as const, label: 'Goals & Plans', icon: Target },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setCurrentTab(id)}
+                  className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors ${
+                    currentTab === id
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-gray-400 hover:text-white hover:border-gray-600'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
 
-            {/* Chat History */}
-            {chatMessages.length > 0 && (
+          {/* Content Area */}
+          <div className="flex-1 flex flex-col px-12 py-8 max-w-6xl mx-auto w-full">
+            {/* Chat Tab */}
+            {currentTab === 'chat' && (
+              <>
+                {/* Hero Section - Only shown when no messages */}
+                {chatMessages.length === 0 && (
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-12">
+                    <div className="text-center space-y-6">
+                      <p className="text-white text-2xl font-normal leading-relaxed">welcome to</p>
+                      <h1 className="text-7xl md:text-8xl font-bold leading-tight">
+                        <span className="bg-gradient-to-r from-blue-300 via-cyan-400 to-teal-600 bg-clip-text text-transparent">
+                          shftrr.
+                        </span>
+                      </h1>
+                    </div>
+                    <div className="w-full max-w-xs h-px bg-gray-600 opacity-30"></div>
+                  </div>
+                )}
+
+                {/* Chat History */}
+                {chatMessages.length > 0 && (
               <SuspenseWrapper
                 fallback={
                   <div className="flex-1 overflow-y-auto space-y-12 py-8">
@@ -595,8 +625,9 @@ export default function ShftrrDashboard() {
               </SuspenseWrapper>
             )}
 
-            {/* Input Field Area */}
-            <div className="mt-auto py-8">
+                {/* Input Field Area - Only show for chat tab */}
+                {currentTab === 'chat' && (
+                  <div className="mt-auto py-8">
               <div className="relative max-w-2xl mx-auto w-full">
                 <label htmlFor="main-input" className="sr-only">
                   Start your conversation
@@ -626,6 +657,27 @@ export default function ShftrrDashboard() {
                 )}
               </div>
             </div>
+                )}
+
+                {/* Job Tracker Tab */}
+                {currentTab === ('jobs' as typeof currentTab) && (
+                  <div className="flex-1">
+                    <JobApplicationTracker />
+                  </div>
+                )}
+
+                {/* Goals & Plans Tab */}
+                {currentTab === ('goals' as typeof currentTab) && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <Target className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-white mb-2">Goals & Career Plans</h3>
+                      <p className="text-gray-400">Coming soon! Set career goals and track your progress.</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </main>
       </div>
