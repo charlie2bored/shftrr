@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
-import { createClient } from '@libsql/client'
 import { env } from './env'
 
 declare global {
@@ -12,10 +11,9 @@ declare global {
 const createPrismaClient = () => {
   try {
     // For SQLite with libsql adapter
-    const libsql = createClient({
+    const adapter = new PrismaLibSql({
       url: env.DATABASE_URL,
     })
-    const adapter = new PrismaLibSql(libsql)
 
     return new PrismaClient({
       adapter,
