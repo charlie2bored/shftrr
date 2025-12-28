@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { generateText, tool } from 'ai';
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/env';
 // import { getMarketSalary, calculateRunway, tools } from '@/lib/gemini-tools'; // Temporarily disabled
 import { z } from 'zod';
 
@@ -119,7 +120,9 @@ export async function POST(request: NextRequest) {
     let result;
     try {
       result = await generateText({
-        model: google('gemini-flash-latest'),
+        model: google('gemini-flash-latest', {
+          apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
+        }),
         messages: fullMessages,
         // Temporarily disable tools to fix build
         // tools: {
