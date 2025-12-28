@@ -20,10 +20,13 @@ const createPrismaClient = () => {
   try {
     console.log('🔧 Creating Prisma client');
     console.log('🔧 Environment:', env.NODE_ENV);
+    console.log('🔧 DATABASE_URL available:', !!env.DATABASE_URL);
     console.log('🔧 Database URL type:', env.DATABASE_URL?.startsWith('prisma+postgres://') ? 'Accelerate' : 'PostgreSQL');
+    console.log('🔧 URL starts with:', env.DATABASE_URL?.substring(0, 20) + '...');
 
     // For Accelerate URLs, use Accelerate extension
     if (env.DATABASE_URL?.startsWith('prisma+postgres://')) {
+      console.log('🔧 Using Accelerate URL:', env.DATABASE_URL.substring(0, 50) + '...');
       const client = new PrismaClient({
         log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
         accelerateUrl: env.DATABASE_URL,
