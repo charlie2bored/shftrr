@@ -80,13 +80,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <WebSiteStructuredData />
         <SoftwareApplicationStructuredData />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}
+        suppressHydrationWarning
       >
         <SessionProvider>
           <ErrorBoundary>
