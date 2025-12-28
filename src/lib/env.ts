@@ -12,7 +12,7 @@ const envSchema = z.object({
   NEXTAUTH_URL: z.string().default('http://localhost:3000'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 

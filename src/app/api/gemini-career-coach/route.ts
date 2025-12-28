@@ -120,6 +120,11 @@ export async function POST(request: NextRequest) {
     console.log('API Key available:', !!env.GOOGLE_GENERATIVE_AI_API_KEY);
     console.log('API Key length:', env.GOOGLE_GENERATIVE_AI_API_KEY?.length);
 
+    // Check if API key is available
+    if (!env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      throw new Error('Google Generative AI API key is missing. Pass it using the \'apiKey\' parameter or the GOOGLE_GENERATIVE_AI_API_KEY environment variable.');
+    }
+
     let result;
     try {
       result = await generateText({
