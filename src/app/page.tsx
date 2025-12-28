@@ -238,17 +238,22 @@ export default function ShftrrDashboard() {
 
   const checkOnboardingStatus = async () => {
     try {
+      console.log('🔍 Checking onboarding status...');
       const response = await fetch('/api/onboarding');
       const data = await response.json();
 
+      console.log('📊 Onboarding API response:', data);
       setOnboardingCompleted(data.completed || false);
 
       // Redirect to onboarding if not completed
       if (!data.completed) {
+        console.log('⚠️ Onboarding not completed, redirecting to /onboarding');
         router.push('/onboarding');
+      } else {
+        console.log('✅ Onboarding completed, staying on chat');
       }
     } catch (error) {
-      console.error('Failed to check onboarding status:', error);
+      console.error('❌ Failed to check onboarding status:', error);
       // Default to completed to avoid blocking the user
       setOnboardingCompleted(true);
     }

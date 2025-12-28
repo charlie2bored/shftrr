@@ -59,9 +59,12 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Onboarding GET request received');
     const session = await getServerSession(authOptions);
+    console.log('👤 Session user ID:', session?.user?.id);
 
     if (!session?.user?.id) {
+      console.log('❌ No session or user ID');
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -71,6 +74,9 @@ export async function GET(request: NextRequest) {
     const onboarding = await prisma.userOnboarding.findUnique({
       where: { userId: session.user.id },
     });
+
+    console.log('📊 Onboarding record found:', !!onboarding);
+    console.log('✅ Completed status:', !!onboarding?.completed);
 
     return NextResponse.json({
       onboarding,
