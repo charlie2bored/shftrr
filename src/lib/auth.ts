@@ -4,7 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from 'bcryptjs';
 import { env } from './env';
 import { schemas } from './validations';
-import { KVUserService, KVPasswordResetService } from './kv';
+import { UserService, PasswordResetService } from './db';
 
 // Extend NextAuth types
 declare module "next-auth" {
@@ -46,7 +46,7 @@ export const authOptions: NextAuthOptions = {
           console.log("✅ Credentials validated for email:", validatedCredentials.email);
 
           // Find user in database
-          const user = await KVUserService.findByEmail(validatedCredentials.email);
+          const user = await UserService.findByEmail(validatedCredentials.email);
           console.log("🔍 User lookup result:", !!user);
 
           if (!user) {
@@ -111,11 +111,11 @@ export const authOptions: NextAuthOptions = {
           const { prisma } = await import('./prisma');
 
           // Check if user exists
-          const existingUser = await KVUserService.findByEmail(profile.email);
+          const existingUser = await UserService.findByEmail(profile.email);
 
           if (!existingUser) {
             // Create new user for Google OAuth
-            await KVUserService.create({
+            await UserService.create({
               email: profile.email,
               name: profile.name || undefined,
               image: profile.image || undefined,
@@ -140,7 +140,7 @@ export async function createUser(userData: { name: string; email: string; passwo
     const validatedData = userSchema.parse(userData);
 
     // Check if user already exists
-    const existingUser = await KVUserService.exists(validatedData.email);
+    const existingUser = await UserService.exists(validatedData.email);
     if (existingUser) {
       throw new Error("User with this email already exists");
     }
@@ -149,7 +149,7 @@ export async function createUser(userData: { name: string; email: string; passwo
     const hashedPassword = await bcrypt.hash(validatedData.password, 12);
 
     // Create user
-    const user = await KVUserService.create({
+    const user = await UserService.create({
       email: validatedData.email,
       name: validatedData.name,
       password: hashedPassword,
@@ -168,7 +168,7 @@ export async function createUser(userData: { name: string; email: string; passwo
 // Helper function to find user by email
 export async function findUserByEmail(email: string) {
   try {
-    return await KVUserService.findByEmail(email);
+    return await UserService.findByEmail(email);
   } catch (error) {
     console.error("❌ Error finding user:", error);
     return null;
@@ -183,7 +183,7 @@ export async function generatePasswordResetToken(email: string): Promise<string>
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Create new token (cleanup happens automatically in the service)
-    await KVPasswordResetService.create({
+    await PasswordResetService.create({
       token,
       email,
       expiresAt,
@@ -198,7 +198,7 @@ export async function generatePasswordResetToken(email: string): Promise<string>
 
 export async function validatePasswordResetToken(token: string): Promise<string | null> {
   try {
-    return await KVPasswordResetService.validateToken(token);
+    return await PasswordResetService.validateToken(token);
   } catch (error) {
     console.error("❌ Error validating reset token:", error);
     return null;
@@ -208,7 +208,7 @@ export async function validatePasswordResetToken(token: string): Promise<string 
 export async function updateUserPassword(email: string, newPassword: string): Promise<boolean> {
   try {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
-    return await KVUserService.updatePassword(email, hashedPassword);
+    return await UserService.updatePassword(email, hashedPassword);
   } catch (error) {
     console.error("❌ Error updating password:", error);
     return false;

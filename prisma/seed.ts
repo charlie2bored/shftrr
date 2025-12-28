@@ -1,0 +1,54 @@
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  console.log('🌱 Seeding database...')
+
+  try {
+    // Create test user
+    const hashedPassword = await bcrypt.hash('password123', 12)
+
+    // Check if test user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: 'test@example.com' }
+    })
+
+    if (existingUser) {
+      console.log('ℹ️  Test user already exists, updating...')
+      await prisma.user.update({
+        where: { email: 'test@example.com' },
+        data: {
+          password: hashedPassword,
+          name: 'Test User',
+          provider: 'credentials'
+        }
+      })
+    } else {
+      await prisma.user.create({
+        data: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
+          password: hashedPassword,
+          provider: 'credentials'
+        }
+      })
+    }
+
+    console.log('✅ Created/updated test user: test@example.com')
+    console.log('📧 Test login: test@example.com / password123')
+
+  } catch (error) {
+    console.error('❌ Seeding failed:', error)
+    throw error
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+main().catch((e) => {
+  console.error('❌ Seeding failed:', e)
+  process.exit(1)
+})
