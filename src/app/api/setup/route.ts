@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import bcrypt from 'bcryptjs';
 
-export async function POST() {
+async function handleSetup() {
   try {
     // Create Prisma client for production
     const prisma = new PrismaClient().$extends(withAccelerate());
@@ -54,4 +54,13 @@ export async function POST() {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+}
+
+export async function GET() {
+  // Allow GET requests for easy testing in browser
+  return handleSetup();
+}
+
+export async function POST() {
+  return handleSetup();
 }
