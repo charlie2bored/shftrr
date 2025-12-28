@@ -117,6 +117,9 @@ export async function POST(request: NextRequest) {
     ];
 
     console.log('Making Gemini API call...');
+    console.log('API Key available:', !!env.GOOGLE_GENERATIVE_AI_API_KEY);
+    console.log('API Key length:', env.GOOGLE_GENERATIVE_AI_API_KEY?.length);
+
     let result;
     try {
       result = await generateText({
