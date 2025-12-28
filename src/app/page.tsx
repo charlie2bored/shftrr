@@ -297,20 +297,17 @@ export default function ShftrrDashboard() {
         isUser: true,
         timestamp: new Date(),
       };
-      updateCurrentChatMessages([...chatMessages, userMessage]);
+
+      // Create updated messages array with user message
+      const messagesWithUser = [...chatMessages, userMessage];
+      updateCurrentChatMessages(messagesWithUser);
       setVentText(userInput);
 
       // Prepare conversation history for Gemini
-      const conversationMessages = chatMessages.map(msg => ({
+      const conversationMessages = messagesWithUser.map(msg => ({
         role: msg.isUser ? 'user' as const : 'assistant' as const,
         content: msg.text
       }));
-
-      // Add current user message
-      conversationMessages.push({
-        role: 'user',
-        content: userInput
-      });
 
       // Send to Gemini
       const chatRequest: GeminiChatRequest = {
@@ -326,7 +323,7 @@ export default function ShftrrDashboard() {
       // Show success toast for message sent
       success("Message sent", "AI is analyzing your career question...");
 
-      // Add AI placeholder message
+      // Add AI placeholder message to the updated messages
       const aiMessageId = `ai-${Date.now()}`;
       const aiMessage: ChatMessage = {
         id: aiMessageId,
@@ -334,19 +331,26 @@ export default function ShftrrDashboard() {
         isUser: false,
         timestamp: new Date(),
       };
-      updateCurrentChatMessages([...chatMessages, aiMessage]);
+      updateCurrentChatMessages([...messagesWithUser, aiMessage]);
 
       // Send request and handle response
       sendMessage(
         chatRequest,
         (chunk) => {
-          // Update AI message with response
-          const updatedMessages = chatMessages.map(msg =>
-              msg.id === aiMessageId
-                ? { ...msg, text: chunk }
-                : msg
-          );
-          updateCurrentChatMessages(updatedMessages);
+          // Update AI message with response chunk
+          setChatSessions(prev => prev.map(session =>
+            session.id === currentChatId
+              ? {
+                  ...session,
+                  messages: session.messages.map(msg =>
+                    msg.id === aiMessageId
+                      ? { ...msg, text: chunk }
+                      : msg
+                  ),
+                  updatedAt: new Date()
+                }
+              : session
+          ));
         },
         (fullResponse: GeminiChatResponse) => {
           setShowTyping(false);
@@ -359,7 +363,7 @@ export default function ShftrrDashboard() {
           console.log('Current chat object:', currentChat);
           console.log('Chat sessions IDs:', chatSessions.map(s => s.id));
 
-          // Update the AI message with response
+          // Update the AI message with final response
           let finalText = fullResponse.response;
 
           // Optional debug logging (only in development)
@@ -372,16 +376,24 @@ export default function ShftrrDashboard() {
             }
           }
 
-          const finalMessages = chatMessages.map(msg =>
-              msg.id === aiMessageId
-                ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
-                : msg
-          );
+          // Update the AI message with final response
+          setChatSessions(prev => prev.map(session =>
+            session.id === currentChatId
+              ? {
+                  ...session,
+                  messages: session.messages.map(msg =>
+                    msg.id === aiMessageId
+                      ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
+                      : msg
+                  ),
+                  updatedAt: new Date()
+                }
+              : session
+          ));
 
-          console.log('Final messages count:', finalMessages.length);
-          console.log('AI message updated:', finalMessages.find(m => m.id === aiMessageId)?.text?.substring(0, 100) + '...');
-
-          updateCurrentChatMessages(finalMessages);
+          const updatedChat = chatSessions.find(s => s.id === currentChatId);
+          console.log('Final messages count:', updatedChat?.messages?.length);
+          console.log('AI message updated:', updatedChat?.messages?.find(m => m.id === aiMessageId)?.text?.substring(0, 100) + '...');
 
           console.log('State update called, checking current chat after update...');
           setTimeout(() => {
