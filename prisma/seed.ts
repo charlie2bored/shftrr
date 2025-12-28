@@ -1,13 +1,36 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 import bcrypt from 'bcryptjs'
 
-console.log('🔧 Starting seed script...');
-console.log('🔧 DATABASE_URL available:', !!process.env.DATABASE_URL);
+// Create Prisma client using same logic as main app
+const createPrismaClient = () => {
+  const url = process.env.DATABASE_URL;
 
-// Create Prisma client - rely on DATABASE_URL environment variable
-// Since prisma db push works, this should work too
-console.log('🔧 DATABASE_URL in seed script:', process.env.DATABASE_URL ? 'Available' : 'Missing');
-const prisma = new PrismaClient();
+  console.log('🔧 Starting seed script...');
+  console.log('🔧 DATABASE_URL available:', !!url);
+  console.log('🔧 URL type:', url?.startsWith('prisma+postgres://') ? 'Accelerate' : 'PostgreSQL');
+
+  if (url?.startsWith('postgres://')) {
+    // For PostgreSQL URLs - use adapter
+    const connectionString = url;
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
+
+    const client = new PrismaClient({
+      adapter,
+    });
+    console.log('✅ Seed Prisma client with PostgreSQL adapter created');
+    return client;
+  } else {
+    // Fallback
+    const client = new PrismaClient();
+    console.log('✅ Seed Prisma client created (fallback)');
+    return client;
+  }
+};
+
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...')
