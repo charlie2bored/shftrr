@@ -131,9 +131,17 @@ export default function ShftrrDashboard() {
     ));
   };
 
+  // All hooks must be called before any early returns
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Check onboarding status for authenticated users (must be before early returns)
+  useEffect(() => {
+    if (session?.user && isClient) {
+      checkOnboardingStatus();
+    }
+  }, [session, isClient]);
 
   // Load chat sessions from localStorage on component mount
   useEffect(() => {
@@ -227,13 +235,6 @@ export default function ShftrrDashboard() {
       </div>
     );
   }
-
-  // Check onboarding status for authenticated users
-  useEffect(() => {
-    if (session?.user && isClient) {
-      checkOnboardingStatus();
-    }
-  }, [session, isClient]);
 
   const checkOnboardingStatus = async () => {
     try {
