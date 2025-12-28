@@ -128,9 +128,7 @@ export async function POST(request: NextRequest) {
     let result;
     try {
       result = await generateText({
-        model: google('gemini-flash-latest', {
-          apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
-        }),
+        model: google('gemini-flash-latest'),
         messages: fullMessages,
         // Temporarily disable tools to fix build
         // tools: {
