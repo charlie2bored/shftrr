@@ -2,18 +2,8 @@ import { PrismaClient } from '@prisma/client'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import bcrypt from 'bcryptjs'
 
-// Create Prisma client based on DATABASE_URL type
-const createPrismaClient = () => {
-  if (process.env.DATABASE_URL?.startsWith('prisma+postgres://')) {
-    return new PrismaClient({
-      accelerateUrl: process.env.DATABASE_URL,
-    }).$extends(withAccelerate());
-  } else {
-    return new PrismaClient({
-      datasourceUrl: process.env.DATABASE_URL,
-    });
-  }
-};
+// Create Prisma client - Prisma will automatically use DATABASE_URL from environment
+const prisma = new PrismaClient();
 
 const prisma = createPrismaClient();
 
