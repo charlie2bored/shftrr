@@ -6,9 +6,7 @@ import bcrypt from 'bcryptjs';
 export async function POST() {
   try {
     // Create Prisma client for production
-    const prisma = new PrismaClient({
-      datasourceUrl: process.env.DATABASE_URL,
-    }).$extends(withAccelerate());
+    const prisma = new PrismaClient().$extends(withAccelerate());
 
     // Create test user
     const hashedPassword = await bcrypt.hash('password123', 12);
