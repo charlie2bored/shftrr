@@ -38,9 +38,8 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log("🔐 Auth attempt - Raw credentials:", credentials);
           console.log("🔐 Auth attempt - Email:", credentials?.email);
-          console.log("🔐 Auth attempt - Password length:", credentials?.password?.length);
+          console.log("🔐 Auth attempt - Password provided:", !!credentials?.password);
 
           // Validate input
           const validatedCredentials = loginSchema.parse(credentials);

@@ -29,10 +29,14 @@ export class UserService {
           updatedAt: true,
         },
       });
-      console.log('🔍 DB: User found:', !!user);
+      console.log('🔍 DB: User lookup result:', user ? 'found' : 'not found');
+      if (user) {
+        console.log('🔍 DB: User has password:', !!user.password);
+      }
       return user;
     } catch (error) {
       console.error('❌ DB: Error finding user by email:', error);
+      console.error('❌ DB: Error details:', error.message);
       return null;
     }
   }
