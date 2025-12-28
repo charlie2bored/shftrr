@@ -12,9 +12,10 @@ declare global {
 const createPrismaClient = () => {
   try {
     // For SQLite with libsql adapter
-    const adapter = new PrismaLibSql({
-      url: "file:./prisma/dev.db",
+    const libsql = createClient({
+      url: env.DATABASE_URL,
     })
+    const adapter = new PrismaLibSql(libsql)
 
     return new PrismaClient({
       adapter,
@@ -32,15 +33,11 @@ const createPrismaClient = () => {
 let prisma: PrismaClient
 
 if (typeof window === 'undefined') {
-  // Server-side only
-  if (env.NODE_ENV === 'production') {
-    prisma = createPrismaClient();
-  } else {
-    if (!global.__prisma) {
-      global.__prisma = createPrismaClient();
-    }
-    prisma = global.__prisma;
+  // Server-side only - use singleton pattern in all environments
+  if (!global.__prisma) {
+    global.__prisma = createPrismaClient();
   }
+  prisma = global.__prisma;
 } else {
   // This should never happen in production
   prisma = createPrismaClient();

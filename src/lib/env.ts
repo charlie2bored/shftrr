@@ -7,9 +7,9 @@ import { z } from 'zod';
 
 // Environment variables schema - all fields optional with defaults for build compatibility
 const envSchema = z.object({
-  DATABASE_URL: z.string().default('mysql://default:default@localhost:3306/default'),
-  NEXTAUTH_SECRET: z.string().default('default-build-secret-key-for-development-only'),
-  NEXTAUTH_URL: z.string().default('http://localhost:3000'),
+  DATABASE_URL: z.string().default('file:./prisma/dev.db'),
+  NEXTAUTH_SECRET: z.string().min(32, 'NEXTAUTH_SECRET must be at least 32 characters').default('default-build-secret-key-for-development-only-change-in-production'),
+  NEXTAUTH_URL: z.string().url().default('http://localhost:3000'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
