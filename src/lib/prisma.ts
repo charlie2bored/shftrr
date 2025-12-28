@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
 import { env } from './env'
 
 declare global {
@@ -6,18 +7,26 @@ declare global {
   var __prisma: PrismaClient | undefined
 }
 
-// Create Prisma client with proper error handling for build time
+// Create Prisma client with conditional Accelerate extension
 const createPrismaClient = () => {
   try {
     console.log('🔧 Creating Prisma client');
     console.log('🔧 Environment:', env.NODE_ENV);
     console.log('🔧 Database URL available:', !!env.DATABASE_URL);
+    console.log('🔧 Using Accelerate:', env.DATABASE_URL?.startsWith('prisma+postgres://'));
 
-    const client = new PrismaClient({
+    let client = new PrismaClient({
       log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
 
-    console.log('✅ Prisma client created successfully');
+    // Only use Accelerate extension if we're using the Accelerate URL
+    if (env.DATABASE_URL?.startsWith('prisma+postgres://')) {
+      client = client.$extends(withAccelerate());
+      console.log('✅ Prisma client with Accelerate created successfully');
+    } else {
+      console.log('✅ Prisma client created successfully');
+    }
+
     return client;
   } catch (error) {
     console.error('❌ Failed to create Prisma client:', error);
