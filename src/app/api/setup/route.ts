@@ -5,8 +5,10 @@ import bcrypt from 'bcryptjs';
 
 async function handleSetup() {
   try {
-    // Create Prisma client for production
-    const prisma = new PrismaClient().$extends(withAccelerate());
+    // Create Prisma client for production with explicit Accelerate URL
+    const prisma = new PrismaClient({
+      datasourceUrl: "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza193MnJFSVNHc1dmWktmOHlVYVRsMEoiLCJhcGlfa2V5IjoiMDFLREhSUFJGUVZUQUM4QVg4TjVaVlhIWEsiLCJ0ZW5hbnRfaWQiOiIwMmFhNDM3YTVkZGZiZjY0ZTNmMjFkMGMxZjRjNzhjYzU0ODRhZDAxMzhjNzI4NTA4NGE0YjFlNDU5YTRiNTNjIiwiaW50ZXJuYWxfc2VjcmV0IjoiOWYyYmI3NzYtYjA4Ni00Mzg0LTg1NTYtN2Q5YmJkNjUxNzU5In0.ZyDJYIXkdCYX9ISv_sD67V65MLZV8odlwh-XgbrEX3M"
+    }).$extends(withAccelerate());
 
     // Create test user
     const hashedPassword = await bcrypt.hash('password123', 12);
