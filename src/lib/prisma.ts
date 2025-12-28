@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { env } from './env'
 
 declare global {
@@ -11,9 +12,14 @@ const createPrismaClient = () => {
   try {
     console.log('🔧 Creating Prisma client');
     console.log('🔧 Environment:', env.NODE_ENV);
-    console.log('🔧 Database URL available:', !!env.DATABASE_URL);
+
+    // For SQLite with libsql adapter
+    const adapter = new PrismaLibSql({
+      url: "file:./data/production.db",
+    })
 
     const client = new PrismaClient({
+      adapter,
       log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
 
