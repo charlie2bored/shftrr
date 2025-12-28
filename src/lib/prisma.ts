@@ -49,24 +49,11 @@ const createPrismaClient = () => {
         });
       }
     } else {
-      // For production with no/invalid DATABASE_URL, use Accelerate as fallback
-      if (env.NODE_ENV === 'production') {
-        const accelerateUrl = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza193MnJFSVNHc1dmWktmOHlVYVRsMEoiLCJhcGlfa2V5IjoiMDFLREhSUFJGUVZUQUM4QVg4TjVaVlhIWEsiLCJ0ZW5hbnRfaWQiOiIwMmFhNDM3YTVkZGZiZjY0ZTNmMjFkMGMxZjRjNzhjYzU0ODRhZDAxMzhjNzI4NTA4NGE0YjFlNDU5YTRiNTNjIiwiaW50ZXJuYWxfc2VjcmV0IjoiOWYyYmI3NzYtYjA4Ni00Mzg0LTg1NTYtN2Q5YmJkNjUxNzU5In0.ZyDJYIXkdCYX9ISv_sD67V65MLZV8odlwh-XgbrEX3M";
-
-        const client = new PrismaClient({
-          log: ['error'],
-          accelerateUrl: accelerateUrl,
-        }).$extends(withAccelerate());
-
-        console.log('✅ Prisma client with Accelerate (production fallback) created successfully');
-        return client;
-      } else {
-        // For any other case, use mock client
-        console.log('⚠️  Unknown database URL format, using mock client');
-        return new Proxy({} as any, {
-          get: () => () => Promise.resolve(null),
-        });
-      }
+      // For any other case, use mock client
+      console.log('⚠️  Unknown database URL format, using mock client');
+      return new Proxy({} as any, {
+        get: () => () => Promise.resolve(null),
+      });
     }
   } catch (error) {
     console.error('❌ Failed to create Prisma client:', error);
