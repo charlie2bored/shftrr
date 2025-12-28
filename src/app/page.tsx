@@ -138,8 +138,12 @@ export default function ShftrrDashboard() {
 
   // Check onboarding status for authenticated users (must be before early returns)
   useEffect(() => {
+    console.log('🔄 useEffect triggered - session:', !!session, 'isClient:', isClient);
     if (session?.user && isClient) {
+      console.log('📞 Calling checkOnboardingStatus for user:', session.user.id);
       checkOnboardingStatus();
+    } else {
+      console.log('⏭️ Skipping onboarding check - session:', !!session, 'isClient:', isClient);
     }
   }, [session, isClient]);
 
