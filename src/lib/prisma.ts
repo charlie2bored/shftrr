@@ -20,7 +20,7 @@ const createPrismaClient = () => {
   try {
     console.log('🔧 Creating Prisma client');
     console.log('🔧 Environment:', env.NODE_ENV);
-    console.log('🔧 Using Accelerate:', env.DATABASE_URL?.startsWith('prisma+postgres://'));
+    console.log('🔧 Database URL type:', env.DATABASE_URL?.startsWith('prisma+postgres://') ? 'Accelerate' : 'PostgreSQL');
 
     // For Accelerate URLs, use Accelerate extension
     if (env.DATABASE_URL?.startsWith('prisma+postgres://')) {
@@ -31,8 +31,17 @@ const createPrismaClient = () => {
 
       console.log('✅ Prisma client with Accelerate created successfully');
       return client;
+    } else if (env.DATABASE_URL?.startsWith('postgres://')) {
+      // For Vercel Postgres and other PostgreSQL URLs
+      const client = new PrismaClient({
+        log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+        datasourceUrl: env.DATABASE_URL,
+      });
+
+      console.log('✅ Prisma client with PostgreSQL created successfully');
+      return client;
     } else {
-      // For direct PostgreSQL URLs (like in development or other setups)
+      // For any other case, use standard client
       const client = new PrismaClient({
         log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
       });

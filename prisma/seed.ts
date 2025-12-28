@@ -2,9 +2,20 @@ import { PrismaClient } from '@prisma/client'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient({
-  accelerateUrl: process.env.DATABASE_URL,
-}).$extends(withAccelerate())
+// Create Prisma client based on DATABASE_URL type
+const createPrismaClient = () => {
+  if (process.env.DATABASE_URL?.startsWith('prisma+postgres://')) {
+    return new PrismaClient({
+      accelerateUrl: process.env.DATABASE_URL,
+    }).$extends(withAccelerate());
+  } else {
+    return new PrismaClient({
+      datasourceUrl: process.env.DATABASE_URL,
+    });
+  }
+};
+
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...')
