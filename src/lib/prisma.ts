@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { withAccelerate } from '@prisma/extension-accelerate'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 import { env } from './env'
 
 declare global {
@@ -23,6 +25,7 @@ const createPrismaClient = () => {
     console.log('🔧 DATABASE_URL available:', !!env.DATABASE_URL);
     console.log('🔧 Database URL type:', env.DATABASE_URL?.startsWith('prisma+postgres://') ? 'Accelerate' : 'PostgreSQL');
     console.log('🔧 URL starts with:', env.DATABASE_URL?.substring(0, 20) + '...');
+    console.log('🔧 Full URL length:', env.DATABASE_URL?.length);
 
     // For Accelerate URLs, use Accelerate extension
     if (env.DATABASE_URL?.startsWith('prisma+postgres://')) {
@@ -35,12 +38,18 @@ const createPrismaClient = () => {
       console.log('✅ Prisma client with Accelerate created successfully');
       return client;
     } else if (env.DATABASE_URL?.startsWith('postgres://')) {
-      // For Vercel Postgres and other PostgreSQL URLs
+      // For Vercel Postgres and other PostgreSQL URLs - use adapter
+      const connectionString = `${env.DATABASE_URL}`;
+
+      const pool = new Pool({ connectionString });
+      const adapter = new PrismaPg(pool);
+
       const client = new PrismaClient({
+        adapter,
         log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
       });
 
-      console.log('✅ Prisma client with PostgreSQL created successfully');
+      console.log('✅ Prisma client with PostgreSQL adapter created successfully');
       return client;
     } else {
       // For any other case, use standard client
