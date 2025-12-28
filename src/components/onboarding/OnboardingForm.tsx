@@ -153,7 +153,7 @@ export function OnboardingForm({ onComplete, initialData = {} }: OnboardingFormP
                 value={formData.yearsExperience?.toString() || ''}
                 onValueChange={(value) => updateFormData('yearsExperience', parseInt(value))}
               >
-                <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                <SelectTrigger className="bg-gray-800 border-gray-600 text-white" aria-describedby="years-experience-help">
                   <SelectValue placeholder="Select your experience level" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-600">
@@ -165,6 +165,9 @@ export function OnboardingForm({ onComplete, initialData = {} }: OnboardingFormP
                   <SelectItem value="16">16+ years</SelectItem>
                 </SelectContent>
               </Select>
+              <div id="years-experience-help" className="sr-only">
+                Select how many years of professional experience you have
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -341,19 +344,19 @@ export function OnboardingForm({ onComplete, initialData = {} }: OnboardingFormP
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-gray-900 border-gray-700">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4" role="main" aria-label="Career onboarding setup">
+      <Card className="w-full max-w-2xl bg-gray-900 border-gray-700" role="region" aria-labelledby="onboarding-title">
         <CardHeader className="text-center">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-gray-400" aria-live="polite">
               Step {currentStep + 1} of {totalSteps}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-gray-400" aria-live="polite">
               {Math.round(progress)}% Complete
             </span>
           </div>
-          <Progress value={progress} className="mb-4" />
-          <CardTitle className="text-white text-xl">
+          <Progress value={progress} className="mb-4" aria-label={`Setup progress: ${Math.round(progress)}% complete`} />
+          <CardTitle id="onboarding-title" className="text-white text-xl">
             {steps[currentStep].title}
           </CardTitle>
           <CardDescription className="text-gray-400">

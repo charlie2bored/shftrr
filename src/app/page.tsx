@@ -560,7 +560,7 @@ export default function ShftrrDashboard() {
         <main className="flex-1 bg-black flex flex-col" role="main">
           {/* Tab Navigation */}
           <div className="border-b border-gray-700 px-12">
-            <nav className="flex space-x-8">
+            <div role="tablist" className="flex space-x-8" aria-label="Main navigation">
               {[
                 { id: 'chat' as const, label: 'Career Chat', icon: MessageSquare },
                 { id: 'jobs' as const, label: 'Job Tracker', icon: Briefcase },
@@ -568,25 +568,41 @@ export default function ShftrrDashboard() {
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
+                  role="tab"
+                  aria-selected={currentTab === id}
+                  aria-controls={`tabpanel-${id}`}
+                  id={`tab-${id}`}
+                  tabIndex={currentTab === id ? 0 : -1}
                   onClick={() => setCurrentTab(id)}
-                  className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowRight') {
+                      const currentIndex = ['chat', 'jobs', 'goals'].indexOf(currentTab);
+                      const nextIndex = (currentIndex + 1) % 3;
+                      setCurrentTab(['chat', 'jobs', 'goals'][nextIndex] as typeof currentTab);
+                    } else if (e.key === 'ArrowLeft') {
+                      const currentIndex = ['chat', 'jobs', 'goals'].indexOf(currentTab);
+                      const prevIndex = currentIndex === 0 ? 2 : currentIndex - 1;
+                      setCurrentTab(['chat', 'jobs', 'goals'][prevIndex] as typeof currentTab);
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black ${
                     currentTab === id
                       ? 'border-blue-500 text-blue-400'
                       : 'border-transparent text-gray-400 hover:text-white hover:border-gray-600'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-4 h-4" aria-hidden="true" />
                   {label}
                 </button>
               ))}
-            </nav>
+            </div>
           </div>
 
           {/* Content Area */}
           <div className="flex-1 flex flex-col px-12 py-8 max-w-6xl mx-auto w-full">
             {/* Chat Tab */}
             {currentTab === 'chat' && (
-              <>
+              <div role="tabpanel" id="tabpanel-chat" aria-labelledby="tab-chat" className="flex-1">
                 {/* Hero Section - Only shown when no messages */}
                 {chatMessages.length === 0 && (
                   <div className="flex-1 flex flex-col items-center justify-center space-y-12">
@@ -673,17 +689,19 @@ export default function ShftrrDashboard() {
               </div>
             </div>
                 )}
+              </div>
+            )}
 
-                {/* Job Tracker Tab */}
+            {/* Job Tracker Tab */}
                 {currentTab === ('jobs' as typeof currentTab) && (
-                  <div className="flex-1">
+                  <div role="tabpanel" id="tabpanel-jobs" aria-labelledby="tab-jobs" className="flex-1">
                     <JobApplicationTracker />
                   </div>
                 )}
 
                 {/* Goals & Plans Tab */}
                 {currentTab === ('goals' as typeof currentTab) && (
-                  <div className="flex-1 flex items-center justify-center">
+                  <div role="tabpanel" id="tabpanel-goals" aria-labelledby="tab-goals" className="flex-1 flex items-center justify-center">
                     <div className="text-center">
                       <Target className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                       <h3 className="text-xl font-semibold text-white mb-2">Goals & Career Plans</h3>

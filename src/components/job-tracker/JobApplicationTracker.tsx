@@ -61,14 +61,23 @@ export function JobApplicationTracker() {
 
   const loadApplications = async () => {
     try {
+      console.log('🔍 Loading job applications...');
       const response = await fetch('/api/job-applications');
+      console.log('📡 API Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 Loaded applications:', data.applications?.length || 0);
         setApplications(data.applications || []);
+      } else {
+        console.error('❌ API Error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error details:', errorText);
+        showError('Failed to load applications', `Server error: ${response.status}`);
       }
     } catch (error) {
-      console.error('Failed to load applications:', error);
-      showError('Failed to load applications', 'Please refresh the page');
+      console.error('❌ Network error loading applications:', error);
+      showError('Failed to load applications', 'Network error - please check your connection');
     } finally {
       setIsLoading(false);
     }
@@ -155,42 +164,48 @@ export function JobApplicationTracker() {
   const stats = getStatusStats();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="main" aria-label="Job applications tracker">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Job Applications</h2>
+          <h1 className="text-2xl font-bold text-white">Job Applications</h1>
           <p className="text-gray-400">Track your job search progress</p>
         </div>
         <Button
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          aria-label="Add new job application"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
           Add Application
         </Button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {Object.entries(STATUS_CONFIG).map(([status, config]) => {
-          const count = stats[status] || 0;
-          const Icon = config.icon;
-          return (
-            <Card key={status} className="bg-gray-900 border-gray-700">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">{config.label}</p>
-                    <p className="text-2xl font-bold text-white">{count}</p>
+      <section aria-labelledby="stats-heading">
+        <h2 id="stats-heading" className="sr-only">Application Statistics</h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4" role="list">
+          {Object.entries(STATUS_CONFIG).map(([status, config]) => {
+            const count = stats[status] || 0;
+            const Icon = config.icon;
+            return (
+              <Card key={status} className="bg-gray-900 border-gray-700" role="listitem">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-400">{config.label}</p>
+                      <p className="text-2xl font-bold text-white" aria-label={`${count} applications ${config.label.toLowerCase()}`}>
+                        {count}
+                      </p>
+                    </div>
+                    <Icon className={`w-8 h-8 ${config.color.replace('bg-', 'text-')}`} aria-hidden="true" />
                   </div>
-                  <Icon className={`w-8 h-8 ${config.color.replace('bg-', 'text-')}`} />
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Add/Edit Form */}
       {showAddForm && (
@@ -343,31 +358,37 @@ export function JobApplicationTracker() {
       )}
 
       {/* Applications List */}
-      <div className="space-y-4">
-        {applications.length === 0 ? (
-          <Card className="bg-gray-900 border-gray-700">
-            <CardContent className="p-8 text-center">
-              <div className="text-gray-400 mb-4">
-                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium text-white mb-2">No applications yet</h3>
-                <p>Start tracking your job applications to stay organized and follow up effectively.</p>
-              </div>
-              <Button onClick={() => setShowAddForm(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Application
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
+      <section aria-labelledby="applications-heading">
+        <h2 id="applications-heading" className="sr-only">Job Applications List</h2>
+        <div className="space-y-4" role="list" aria-label="Job applications">
+          {applications.length === 0 ? (
+            <Card className="bg-gray-900 border-gray-700">
+              <CardContent className="p-8 text-center">
+                <div className="text-gray-400 mb-4">
+                  <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" aria-hidden="true" />
+                  <h3 className="text-lg font-medium text-white mb-2">No applications yet</h3>
+                  <p>Start tracking your job applications to stay organized and follow up effectively.</p>
+                </div>
+                <Button
+                  onClick={() => setShowAddForm(true)}
+                  className="bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                  aria-label="Add your first job application"
+                >
+                  <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Add Your First Application
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
           applications.map((application) => {
             const statusConfig = STATUS_CONFIG[application.status];
             const StatusIcon = statusConfig.icon;
 
             return (
-              <Card key={application.id} className="bg-gray-900 border-gray-700">
+              <Card key={application.id} className="bg-gray-900 border-gray-700" role="listitem">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
+                    <div className="flex-1" role="region" aria-label={`Application for ${application.role} at ${application.company}`}>
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-xl font-semibold text-white">
                           {application.role}
@@ -415,32 +436,35 @@ export function JobApplicationTracker() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 ml-4" role="group" aria-label="Application actions">
                       {application.jobUrl && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(application.jobUrl, '_blank')}
-                          className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                          className="border-gray-600 text-gray-300 hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                          aria-label={`View job posting for ${application.role} at ${application.company}`}
                         >
-                          <ExternalLink className="w-4 h-4" />
+                          <ExternalLink className="w-4 h-4" aria-hidden="true" />
                         </Button>
                       )}
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => startEdit(application)}
-                        className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                        className="border-gray-600 text-gray-300 hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                        aria-label={`Edit application for ${application.role} at ${application.company}`}
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-4 h-4" aria-hidden="true" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDelete(application.id)}
-                        className="border-red-600 text-red-400 hover:bg-red-900/20"
+                        className="border-red-600 text-red-400 hover:bg-red-900/20 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                        aria-label={`Delete application for ${application.role} at ${application.company}`}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </Button>
                     </div>
                   </div>
