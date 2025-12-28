@@ -355,6 +355,9 @@ export default function ShftrrDashboard() {
           console.log('Response length:', fullResponse.response?.length);
           console.log('Current chat ID:', currentChatId);
           console.log('Current chat messages before update:', chatMessages.length);
+          console.log('Chat sessions count:', chatSessions.length);
+          console.log('Current chat object:', currentChat);
+          console.log('Chat sessions IDs:', chatSessions.map(s => s.id));
 
           // Update the AI message with response
           let finalText = fullResponse.response;
