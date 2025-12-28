@@ -15,7 +15,8 @@ export class UserService {
    */
   static async findByEmail(email: string): Promise<User | null> {
     try {
-      return await prisma.user.findUnique({
+      console.log('🔍 DB: Finding user by email:', email);
+      const user = await prisma.user.findUnique({
         where: { email },
         select: {
           id: true,
@@ -28,8 +29,10 @@ export class UserService {
           updatedAt: true,
         },
       });
+      console.log('🔍 DB: User found:', !!user);
+      return user;
     } catch (error) {
-      console.error('Error finding user by email:', error);
+      console.error('❌ DB: Error finding user by email:', error);
       return null;
     }
   }

@@ -38,13 +38,17 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
+          console.log("🔐 Auth attempt - Raw credentials:", credentials);
           console.log("🔐 Auth attempt - Email:", credentials?.email);
+          console.log("🔐 Auth attempt - Password length:", credentials?.password?.length);
 
           // Validate input
           const validatedCredentials = loginSchema.parse(credentials);
+          console.log("✅ Credentials validated for email:", validatedCredentials.email);
 
           // Find user in database
           const user = await UserService.findByEmail(validatedCredentials.email);
+          console.log("🔍 User lookup result:", !!user);
 
           if (!user) {
             console.log("❌ User not found");
@@ -57,8 +61,11 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Please sign in with Google");
           }
 
+          console.log("🔑 Password hash exists, attempting comparison...");
           // Verify password
           const isValidPassword = await bcrypt.compare(validatedCredentials.password, user.password);
+          console.log("🔍 Password verification result:", isValidPassword);
+
           if (!isValidPassword) {
             console.log("❌ Password mismatch");
             throw new Error("Invalid email or password");

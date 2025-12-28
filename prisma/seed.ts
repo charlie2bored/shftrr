@@ -6,14 +6,14 @@ async function main() {
   console.log('🌱 Seeding database...')
 
   // Connect to SQLite database
-  const dbPath = path.join(process.cwd(), 'prisma', 'dev.db')
+  const dbPath = path.join(process.cwd(), 'data', 'production.db')
   const db = new Database(dbPath)
 
   try {
     // Create test user
     const hashedPassword = await bcrypt.hash('password123', 12)
 
-    // Insert test user
+    // Insert or replace test user
     const stmt = db.prepare(`
       INSERT OR REPLACE INTO users (id, email, name, password, provider, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?)

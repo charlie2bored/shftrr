@@ -10,17 +10,23 @@ declare global {
 // Create Prisma client with proper error handling for build time
 const createPrismaClient = () => {
   try {
+    console.log('🔧 Creating Prisma client');
+    console.log('🔧 Environment:', env.NODE_ENV);
+
     // For SQLite with libsql adapter
     const adapter = new PrismaLibSql({
-      url: env.DATABASE_URL,
+      url: "file:./data/production.db",
     })
 
-    return new PrismaClient({
+    const client = new PrismaClient({
       adapter,
       log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
+
+    console.log('✅ Prisma client created successfully');
+    return client;
   } catch (error) {
-    console.error('Failed to create Prisma client:', error);
+    console.error('❌ Failed to create Prisma client:', error);
     // Return a mock client during build time
     return new Proxy({} as PrismaClient, {
       get: () => () => Promise.resolve(null),
