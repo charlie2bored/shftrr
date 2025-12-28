@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { createClient } from '@libsql/client'
 import { env } from './env'
 
 declare global {
@@ -9,7 +11,13 @@ declare global {
 // Create Prisma client with proper error handling for build time
 const createPrismaClient = () => {
   try {
+    // For SQLite with libsql adapter
+    const adapter = new PrismaLibSql({
+      url: "file:./prisma/dev.db",
+    })
+
     return new PrismaClient({
+      adapter,
       log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
   } catch (error) {

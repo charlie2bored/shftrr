@@ -8,14 +8,6 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  generator: {
-    client: {
-      provider: "prisma-client-js",
-    },
-  },
-  seed: {
-    typescript: "npx tsx prisma/seed.ts",
-  },
   datasource: {
     url: "file:./prisma/dev.db",
   },
