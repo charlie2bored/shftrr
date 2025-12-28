@@ -1,50 +1,42 @@
-import { PrismaClient } from '@prisma/client'
+import Database from 'better-sqlite3'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
+import path from 'path'
 
 async function main() {
   console.log('🌱 Seeding database...')
+
+  // Connect to SQLite database
+  const dbPath = path.join(process.cwd(), 'dev.db')
+  const db = new Database(dbPath)
 
   try {
     // Create test user
     const hashedPassword = await bcrypt.hash('password123', 12)
 
-    // Check if test user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: 'test@example.com' }
-    })
+    // Insert or replace test user
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO users (id, email, name, password, provider, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `)
 
-    if (existingUser) {
-      console.log('ℹ️  Test user already exists, updating...')
-      await prisma.user.update({
-        where: { email: 'test@example.com' },
-        data: {
-          password: hashedPassword,
-          name: 'Test User',
-          provider: 'credentials'
-        }
-      })
-    } else {
-      await prisma.user.create({
-        data: {
-          id: 'test-user-id',
-          email: 'test@example.com',
-          name: 'Test User',
-          password: hashedPassword,
-          provider: 'credentials'
-        }
-      })
-    }
+    const userId = 'test-user-id'
+    const now = new Date().toISOString()
 
-    console.log('✅ Created/updated test user: test@example.com')
+    stmt.run(
+      userId,
+      'test@example.com',
+      'Test User',
+      hashedPassword,
+      'credentials',
+      now,
+      now
+    )
+
+    console.log('✅ Created test user: test@example.com')
     console.log('📧 Test login: test@example.com / password123')
 
-  } catch (error) {
-    console.error('❌ Seeding failed:', error)
-    throw error
   } finally {
-    await prisma.$disconnect()
+    db.close()
   }
 }
 
