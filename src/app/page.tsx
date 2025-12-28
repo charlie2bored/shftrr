@@ -138,12 +138,8 @@ export default function ShftrrDashboard() {
 
   // Check onboarding status for authenticated users (must be before early returns)
   useEffect(() => {
-    console.log('🔄 useEffect triggered - session:', !!session, 'isClient:', isClient);
     if (session?.user && isClient) {
-      console.log('📞 Calling checkOnboardingStatus for user:', session.user.id);
       checkOnboardingStatus();
-    } else {
-      console.log('⏭️ Skipping onboarding check - session:', !!session, 'isClient:', isClient);
     }
   }, [session, isClient]);
 
@@ -355,13 +351,6 @@ export default function ShftrrDashboard() {
         (fullResponse: GeminiChatResponse) => {
           setShowTyping(false);
 
-          console.log('Received response:', fullResponse.response);
-          console.log('Response length:', fullResponse.response?.length);
-          console.log('Current chat ID:', currentChatId);
-          console.log('Current chat messages before update:', chatMessages.length);
-          console.log('Chat sessions count:', chatSessions.length);
-          console.log('Current chat object:', currentChat);
-          console.log('Chat sessions IDs:', chatSessions.map(s => s.id));
 
           // Update the AI message with final response
           let finalText = fullResponse.response;
@@ -391,20 +380,8 @@ export default function ShftrrDashboard() {
               : session
           ));
 
-          const updatedChat = chatSessions.find(s => s.id === currentChatId);
-          console.log('Final messages count:', updatedChat?.messages?.length);
-          console.log('AI message updated:', updatedChat?.messages?.find(m => m.id === aiMessageId)?.text?.substring(0, 100) + '...');
-
-          console.log('State update called, checking current chat after update...');
-          setTimeout(() => {
-            const updatedChat = chatSessions.find(s => s.id === currentChatId);
-            console.log('Updated chat messages count:', updatedChat?.messages?.length);
-            console.log('Updated AI message text preview:', updatedChat?.messages?.find(m => m.id === aiMessageId)?.text?.substring(0, 100) + '...');
-          }, 100);
 
           // Response processed successfully
-
-              console.log('Gemini Response complete:', fullResponse);
         }
       ).catch((err) => {
         setShowTyping(false);
