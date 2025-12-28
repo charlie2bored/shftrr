@@ -35,7 +35,6 @@ const createPrismaClient = () => {
       // For Vercel Postgres and other PostgreSQL URLs
       const client = new PrismaClient({
         log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-        datasourceUrl: env.DATABASE_URL,
       });
 
       console.log('✅ Prisma client with PostgreSQL created successfully');
