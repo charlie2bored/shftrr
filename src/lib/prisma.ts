@@ -4,7 +4,7 @@ import { env } from './env'
 
 declare global {
   // eslint-disable-next-line no-var
-  var __prisma: PrismaClient | undefined
+  var __prisma: any
 }
 
 // Create Prisma client with conditional Accelerate extension
@@ -15,23 +15,28 @@ const createPrismaClient = () => {
     console.log('🔧 Database URL available:', !!env.DATABASE_URL);
     console.log('🔧 Using Accelerate:', env.DATABASE_URL?.startsWith('prisma+postgres://'));
 
-    let client = new PrismaClient({
-      log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    });
-
-    // Only use Accelerate extension if we're using the Accelerate URL
+    // For Accelerate URLs, we need to provide accelerateUrl to the constructor
     if (env.DATABASE_URL?.startsWith('prisma+postgres://')) {
-      client = client.$extends(withAccelerate());
-      console.log('✅ Prisma client with Accelerate created successfully');
-    } else {
-      console.log('✅ Prisma client created successfully');
-    }
+      const client = new PrismaClient({
+        log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+        accelerateUrl: env.DATABASE_URL,
+      }).$extends(withAccelerate());
 
-    return client;
+      console.log('✅ Prisma client with Accelerate created successfully');
+      return client;
+    } else {
+      // For regular PostgreSQL URLs, use standard client
+      const client = new PrismaClient({
+        log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      });
+
+      console.log('✅ Prisma client created successfully');
+      return client;
+    }
   } catch (error) {
     console.error('❌ Failed to create Prisma client:', error);
     // Return a mock client during build time
-    return new Proxy({} as PrismaClient, {
+    return new Proxy({} as any, {
       get: () => () => Promise.resolve(null),
     });
   }
