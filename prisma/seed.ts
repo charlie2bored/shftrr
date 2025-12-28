@@ -1,11 +1,8 @@
 import { PrismaClient } from '@prisma/client'
-import { withAccelerate } from '@prisma/extension-accelerate'
 import bcrypt from 'bcryptjs'
 
 // Create Prisma client - Prisma will automatically use DATABASE_URL from environment
 const prisma = new PrismaClient();
-
-const prisma = createPrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...')
