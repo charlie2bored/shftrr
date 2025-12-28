@@ -344,6 +344,8 @@ export default function ShftrrDashboard() {
 
           console.log('Received response:', fullResponse.response);
           console.log('Response length:', fullResponse.response?.length);
+          console.log('Current chat ID:', currentChatId);
+          console.log('Current chat messages before update:', chatMessages.length);
 
           // Update the AI message with response
           let finalText = fullResponse.response;
@@ -363,7 +365,18 @@ export default function ShftrrDashboard() {
                 ? { ...msg, text: finalText, toolCalls: fullResponse.toolCalls, toolResults: fullResponse.toolResults }
                 : msg
           );
+
+          console.log('Final messages count:', finalMessages.length);
+          console.log('AI message updated:', finalMessages.find(m => m.id === aiMessageId)?.text?.substring(0, 100) + '...');
+
           updateCurrentChatMessages(finalMessages);
+
+          console.log('State update called, checking current chat after update...');
+          setTimeout(() => {
+            const updatedChat = chatSessions.find(s => s.id === currentChatId);
+            console.log('Updated chat messages count:', updatedChat?.messages?.length);
+            console.log('Updated AI message text preview:', updatedChat?.messages?.find(m => m.id === aiMessageId)?.text?.substring(0, 100) + '...');
+          }, 100);
 
           // Response processed successfully
 
